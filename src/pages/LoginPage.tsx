@@ -41,11 +41,13 @@ const LoginPage = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (loading || authLoading) return;
+    
     setLoading(true);
     try {
       await login(data.email, data.password);
-      // Don't navigate here - the auth state change will trigger navigation in AuthContext
       toast.success("Connexion réussie");
+      // Navigation is handled in the AuthContext
     } catch (error) {
       console.error("Login error:", error);
       if (error instanceof Error) {

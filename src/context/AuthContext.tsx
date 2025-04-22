@@ -30,46 +30,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession?.user?.email);
         setSession(currentSession);
-        setLoading(true);
         
         if (currentSession?.user) {
           try {
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select(`*, departments(name)`)
-              .eq('id', currentSession.user.id)
-              .single();
-              
-            if (error) {
-              console.error('Error fetching profile:', error);
-              setUser(null);
-            } else if (profile) {
-              setUser(profile);
-              
-              // Redirect to dashboard on login
-              if (event === 'SIGNED_IN') {
-                navigate('/dashboard');
+            // Fetch user profile in a timeout to avoid deadlocks
+            setTimeout(async () => {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`*, departments(name)`)
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (error) {
+                console.error('Error fetching profile:', error);
+                setUser(null);
+              } else if (profile) {
+                setUser(profile);
+                
+                // Redirect to dashboard on login
+                if (event === 'SIGNED_IN') {
+                  navigate('/dashboard');
+                }
               }
-            }
+              setLoading(false);
+            }, 0);
           } catch (error) {
             console.error('Error in auth state change:', error);
             setUser(null);
+            setLoading(false);
           }
         } else {
           setUser(null);
+          setLoading(false);
           
           // Redirect to login on logout
           if (event === 'SIGNED_OUT') {
             navigate('/login');
           }
         }
-        
-        setLoading(false);
       }
     );
 
@@ -120,9 +123,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error: any) {
       console.error('Login error:', error);
-      throw new Error(error.message || 'Échec de connexion');
-    } finally {
       setLoading(false);
+      throw new Error(error.message || 'Échec de connexion');
     }
   };
 
