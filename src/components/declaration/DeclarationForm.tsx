@@ -226,6 +226,13 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
     return cm + td + tp;
   };
 
+  const handleSubmitDeclaration = () => {
+    if (existingDeclaration && existingDeclaration.id) {
+      submitDeclaration(existingDeclaration.id);
+      navigate('/declarations');
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -550,7 +557,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
               {existingDeclaration && existingDeclaration.id && existingDeclaration.status === 'brouillon' && (
                 <Button
                   type="button"
-                  onClick={submitDeclaration}
+                  onClick={handleSubmitDeclaration}
                   variant="default"
                   className="bg-polytech-secondary hover:bg-polytech-secondary/90"
                   disabled={submitting}
