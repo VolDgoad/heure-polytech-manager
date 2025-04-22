@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeclarations } from '@/context/DeclarationContext';
@@ -33,7 +32,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Schema for form validation
 const sessionSchema = z.object({
   id: z.string().optional(),
   date: z.date({
@@ -122,6 +120,9 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
         hoursCount: session.hoursCount,
         department: session.department,
         comments: session.comments,
+        duration: session.hoursCount || 0,
+        type: session.courseType === 'CM' ? 'cm' : session.courseType === 'TD' ? 'td' : 'tp',
+        location: 'N/A',
       }));
 
       if (existingDeclaration) {
