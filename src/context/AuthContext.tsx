@@ -1,103 +1,118 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole } from '@/types';
+import { User } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   loading: true,
   login: async () => {},
-  logout: () => {},
+  logout: async () => {},
   isAuthenticated: false,
 });
 
-// Mock users for demonstration
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    name: 'Dr. Amadou Diop',
-    email: 'enseignant@polytech.edu',
-    role: 'enseignant',
-    department: 'Informatique',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-  },
-  {
-    id: '2',
-    name: 'Mme Fatou Ndiaye',
-    email: 'scolarite@polytech.edu',
-    role: 'scolarite',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-  },
-  {
-    id: '3',
-    name: 'Prof. Mamadou Sow',
-    email: 'chef@polytech.edu',
-    role: 'chef_departement',
-    department: 'Informatique',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-  },
-  {
-    id: '4',
-    name: 'Dr. Aïssatou Ba',
-    email: 'directrice@polytech.edu',
-    role: 'directrice',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-  },
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('polytechUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        setLoading(true);
+        
+        if (currentSession?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select(`*, departments(name)`)
+            .eq('id', currentSession.user.id)
+            .single();
+            
+          if (profile) {
+            setUser(profile);
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Initial session check
+    const checkUser = async () => {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+      
+      if (initialSession?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select(`*, departments(name)`)
+          .eq('id', initialSession.user.id)
+          .single();
+          
+        if (profile) {
+          setUser(profile);
+        }
+      }
+      
+      setLoading(false);
+    };
+    
+    checkUser();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    // This is a mock authentication
-    // In a real app, you would make an API call to your backend
     setLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (foundUser && password === 'password') { // Simple password check for demo
-      setUser(foundUser);
-      localStorage.setItem('polytechUser', JSON.stringify(foundUser));
-    } else {
-      throw new Error('Identifiants invalides');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      throw new Error(error.message || 'Échec de connexion');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('polytechUser');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   };
 
   return (
     <AuthContext.Provider 
       value={{ 
         user, 
+        session,
         loading, 
         login, 
         logout,
-        isAuthenticated: !!user
+        isAuthenticated: !!session
       }}
     >
       {children}

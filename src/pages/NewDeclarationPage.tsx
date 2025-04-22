@@ -1,5 +1,5 @@
 
-import DeclarationForm from '@/components/DeclarationForm';
+import DeclarationForm from '@/components/declaration/DeclarationForm';
 
 const NewDeclarationPage = () => {
   return <DeclarationForm />;

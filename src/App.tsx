@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { DeclarationProvider } from "./context/DeclarationContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppShell from "./components/Layout/AppShell";
 import LoginPage from "./pages/LoginPage";
@@ -22,118 +21,139 @@ import ProfilePage from "./pages/ProfilePage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import DepartmentsPage from "./pages/admin/DepartmentsPage";
+import UsersPage from "./pages/admin/UsersPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <DeclarationProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppShell />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="dashboard" element={<DashboardPage />} />
               
-              <Route
-                path="/"
+              <Route 
+                path="declarations" 
+                element={
+                  <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice_etudes']}>
+                    <DeclarationsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="declarations/new" 
+                element={
+                  <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice_etudes']}>
+                    <NewDeclarationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="declarations/:id" 
                 element={
                   <ProtectedRoute>
-                    <AppShell />
+                    <ViewDeclarationPage />
                   </ProtectedRoute>
-                }
-              >
-                <Route index element={<DashboardPage />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                
-                <Route 
-                  path="declarations" 
-                  element={
-                    <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice']}>
-                      <DeclarationsPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="declarations/new" 
-                  element={
-                    <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice']}>
-                      <NewDeclarationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="declarations/:id" 
-                  element={
-                    <ProtectedRoute>
-                      <ViewDeclarationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="declarations/:id/edit" 
-                  element={
-                    <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice']}>
-                      <EditDeclarationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="verification" 
-                  element={
-                    <ProtectedRoute allowedRoles={['scolarite']}>
-                      <VerificationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="verification/:id" 
-                  element={
-                    <ProtectedRoute allowedRoles={['scolarite']}>
-                      <VerificationDetailsPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="validation" 
-                  element={
-                    <ProtectedRoute allowedRoles={['chef_departement', 'directrice']}>
-                      <ValidationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="validation/:id" 
-                  element={
-                    <ProtectedRoute allowedRoles={['chef_departement', 'directrice']}>
-                      <ValidationDetailsPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="profile" 
-                  element={
-                    <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Route>
+                } 
+              />
               
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </DeclarationProvider>
+              <Route 
+                path="declarations/:id/edit" 
+                element={
+                  <ProtectedRoute allowedRoles={['enseignant', 'chef_departement', 'directrice_etudes']}>
+                    <EditDeclarationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="verification" 
+                element={
+                  <ProtectedRoute allowedRoles={['scolarite']}>
+                    <VerificationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="verification/:id" 
+                element={
+                  <ProtectedRoute allowedRoles={['scolarite']}>
+                    <VerificationDetailsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="validation" 
+                element={
+                  <ProtectedRoute allowedRoles={['chef_departement', 'directrice_etudes']}>
+                    <ValidationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="validation/:id" 
+                element={
+                  <ProtectedRoute allowedRoles={['chef_departement', 'directrice_etudes']}>
+                    <ValidationDetailsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Admin routes */}
+              <Route 
+                path="admin/departments" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <DepartmentsPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="admin/users" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <UsersPage />
+                  </ProtectedRoute>
+                } 
+              />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
