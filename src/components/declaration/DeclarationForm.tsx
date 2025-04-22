@@ -16,10 +16,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Department, Program, Level, Semester, TeachingUnit, CourseElement, Declaration } from '@/types';
+import { Declaration } from '@/types';
+import { Program, Level, Semester, TeachingUnit, CourseElement } from '@/types/academic';
+import { useDeclarations } from '@/context/DeclarationContext';
 
 interface HierarchyData {
-  departments: Department[];
+  departments: { id: string; name: string; }[];
   programs: Program[];
   levels: Level[];
   semesters: Semester[];
@@ -61,6 +63,7 @@ interface DeclarationFormProps {
 const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: DeclarationFormProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { submitDeclaration } = useDeclarations();
   const [submitting, setSubmitting] = useState(false);
   const [hierarchyData, setHierarchyData] = useState<HierarchyData>({
     departments: [],
@@ -100,7 +103,6 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
         }
   });
 
-  // Watch form values to update dependent dropdowns
   const watchDepartment = form.watch('department_id');
   const watchProgram = form.watch('program_id');
   const watchLevel = form.watch('level_id');

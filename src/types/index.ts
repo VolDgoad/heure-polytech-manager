@@ -94,3 +94,6 @@ export interface CourseSession {
   department?: string;
   comments?: string;
 }
+
+// Re-export academic types for backward compatibility
+export * from './academic';
