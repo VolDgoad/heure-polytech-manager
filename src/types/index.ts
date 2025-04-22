@@ -97,6 +97,11 @@ export interface Declaration {
   rejection_reason?: string;
   created_at: string;
   updated_at: string;
+  
+  // Client-side computed properties
+  departmentName?: string;
+  teacherName?: string;
+  totalHours?: number;
 }
 
 export interface CourseSession {

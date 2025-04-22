@@ -9,15 +9,17 @@ interface DeclarationStatusBadgeProps {
 const DeclarationStatusBadge = ({ status }: DeclarationStatusBadgeProps) => {
   const getStatusLabel = () => {
     switch (status) {
-      case 'draft':
+      case 'brouillon':
         return 'Brouillon';
-      case 'submitted':
+      case 'soumise':
         return 'Soumis';
-      case 'verified':
+      case 'verifiee':
         return 'Vérifié';
-      case 'approved':
+      case 'validee':
+        return 'Validé';
+      case 'approuvee':
         return 'Approuvé';
-      case 'rejected':
+      case 'rejetee':
         return 'Rejeté';
       default:
         return 'Inconnu';
@@ -26,15 +28,16 @@ const DeclarationStatusBadge = ({ status }: DeclarationStatusBadgeProps) => {
 
   const getStatusClass = () => {
     switch (status) {
-      case 'draft':
+      case 'brouillon':
         return 'bg-gray-100 text-gray-800';
-      case 'submitted':
+      case 'soumise':
         return 'bg-blue-100 text-blue-800';
-      case 'verified':
+      case 'verifiee':
         return 'bg-purple-100 text-purple-800';
-      case 'approved':
+      case 'validee':
+      case 'approuvee':
         return 'bg-green-100 text-green-800';
-      case 'rejected':
+      case 'rejetee':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -42,7 +45,7 @@ const DeclarationStatusBadge = ({ status }: DeclarationStatusBadgeProps) => {
   };
 
   return (
-    <span className={cn('status-badge', getStatusClass())}>
+    <span className={cn('status-badge px-2 py-1 rounded-full text-xs font-medium', getStatusClass())}>
       {getStatusLabel()}
     </span>
   );
