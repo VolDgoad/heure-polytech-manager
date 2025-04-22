@@ -97,7 +97,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
           courseTitle: '',
           courseType: 'CM' as const,
           hoursCount: 0,
-          department: user?.department || departments[0],
+          department: user?.department_id || departments[0],
           comments: '',
         },
       ],
@@ -112,10 +112,16 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setSubmitting(true);
     try {
-      const processedSessions = data.sessions.map(session => ({
-        ...session,
+      const processedSessions: CourseSession[] = data.sessions.map(session => ({
         id: session.id || Date.now().toString(),
         date: format(session.date, 'yyyy-MM-dd'),
+        startTime: session.startTime,
+        endTime: session.endTime,
+        courseTitle: session.courseTitle,
+        courseType: session.courseType,
+        hoursCount: session.hoursCount,
+        department: session.department,
+        comments: session.comments,
       }));
 
       if (existingDeclaration) {
@@ -147,7 +153,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
       courseTitle: '',
       courseType: 'CM' as const,
       hoursCount: 0,
-      department: user?.department || departments[0],
+      department: user?.department_id || departments[0],
       comments: '',
     });
   };
@@ -348,7 +354,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={isReadOnly || user?.role !== 'directrice'}
+                      disabled={isReadOnly || user?.role !== 'directrice_etudes'}
                     >
                       <FormControl>
                         <SelectTrigger>

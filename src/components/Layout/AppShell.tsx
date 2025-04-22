@@ -1,7 +1,7 @@
 
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from './Sidebar';
-import Header from './Header';
+import { Header } from './Header';
 import { Outlet } from 'react-router-dom';
 
 const AppShell = () => {

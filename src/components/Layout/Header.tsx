@@ -9,17 +9,16 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-import { useMobile } from "@/hooks/use-mobile";
-import { Bell, LogOut, Menu, User2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Bell, LogOut, Menu, User2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const isMobile = window.innerWidth < 768;
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);

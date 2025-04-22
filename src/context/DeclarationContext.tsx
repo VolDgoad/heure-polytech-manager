@@ -22,58 +22,39 @@ interface DeclarationContextType {
 const INITIAL_DECLARATIONS: Declaration[] = [
   {
     id: '1',
-    userId: '1',
-    userName: 'Dr. Amadou Diop',
-    department: 'Informatique',
-    sessions: [
-      {
-        id: '101',
-        date: '2023-05-10',
-        startTime: '08:00',
-        endTime: '10:00',
-        courseTitle: 'Introduction à la Programmation',
-        courseType: 'CM',
-        hoursCount: 2,
-        department: 'Informatique',
-      },
-      {
-        id: '102',
-        date: '2023-05-11',
-        startTime: '13:00',
-        endTime: '16:00',
-        courseTitle: 'Travaux Pratiques Python',
-        courseType: 'TP',
-        hoursCount: 3,
-        department: 'Informatique',
-      },
-    ],
-    status: 'submitted',
-    totalHours: 5,
-    createdAt: '2023-05-09T10:30:00Z',
-    updatedAt: '2023-05-09T15:45:00Z',
+    teacher_id: '1',
+    teacherName: 'Dr. Amadou Diop',
+    departmentName: 'Informatique',
+    department_id: 'dept1',
+    course_element_id: 'ce1',
+    cm_hours: 2,
+    td_hours: 0,
+    tp_hours: 3,
+    declaration_date: '2023-05-09',
+    status: 'soumise',
+    payment_status: 'non_paye',
+    created_at: '2023-05-09T10:30:00Z',
+    updated_at: '2023-05-09T15:45:00Z',
+    totalHours: 5
   },
   {
     id: '2',
-    userId: '1',
-    userName: 'Dr. Amadou Diop',
-    department: 'Informatique',
-    sessions: [
-      {
-        id: '201',
-        date: '2023-05-15',
-        startTime: '09:00',
-        endTime: '12:00',
-        courseTitle: 'Algorithmes et Structures de Données',
-        courseType: 'CM',
-        hoursCount: 3,
-        department: 'Informatique',
-      },
-    ],
-    status: 'verified',
-    totalHours: 3,
-    createdAt: '2023-05-14T08:20:00Z',
-    updatedAt: '2023-05-16T14:10:00Z',
-    verifiedBy: 'Mme Fatou Ndiaye',
+    teacher_id: '1',
+    teacherName: 'Dr. Amadou Diop',
+    departmentName: 'Informatique',
+    department_id: 'dept1',
+    course_element_id: 'ce2',
+    cm_hours: 3,
+    td_hours: 0,
+    tp_hours: 0,
+    declaration_date: '2023-05-14',
+    status: 'verifiee',
+    payment_status: 'non_paye',
+    created_at: '2023-05-14T08:20:00Z',
+    updated_at: '2023-05-16T14:10:00Z',
+    verified_by: 'uid123',
+    verified_at: '2023-05-16T14:10:00Z',
+    totalHours: 3
   },
 ];
 
@@ -117,23 +98,23 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Filter declarations based on user role
   const userDeclarations = user 
-    ? declarations.filter(d => d.userId === user.id)
+    ? declarations.filter(d => d.teacher_id === user.id)
     : [];
 
   const pendingDeclarations = user 
     ? (() => {
         switch(user.role) {
           case 'scolarite':
-            return declarations.filter(d => d.status === 'submitted');
+            return declarations.filter(d => d.status === 'soumise');
           case 'chef_departement':
             return declarations.filter(
-              d => d.status === 'verified' && 
-              d.department === user.department
+              d => d.status === 'verifiee' && 
+              d.department_id === user.department_id
             );
-          case 'directrice':
+          case 'directrice_etudes':
             return declarations.filter(d => 
-              d.status === 'verified' || 
-              (d.status === 'approved' && d.approvedBy !== 'Dr. Aïssatou Ba')
+              d.status === 'verifiee' || 
+              (d.status === 'approuvee' && d.approved_by !== 'Dr. Aïssatou Ba')
             );
           default:
             return [];
@@ -146,16 +127,24 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     
     const totalHours = sessions.reduce((total, session) => total + session.hoursCount, 0);
     
+    const userName = `${user.first_name} ${user.last_name}`;
+    
     const newDeclaration: Declaration = {
       id: Date.now().toString(),
-      userId: user.id,
-      userName: user.name,
-      department: user.department || '',
-      sessions,
-      status: 'draft',
-      totalHours,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      teacher_id: user.id,
+      teacherName: userName,
+      department_id: user.department_id || '',
+      departmentName: '',
+      course_element_id: '', // This should be set properly based on course element selection
+      cm_hours: 0,
+      td_hours: 0,
+      tp_hours: 0,
+      declaration_date: new Date().toISOString().split('T')[0],
+      status: 'brouillon',
+      payment_status: 'non_paye',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      totalHours
     };
     
     setDeclarations(prev => [newDeclaration, ...prev]);
@@ -170,9 +159,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         declaration.id === id 
           ? {
               ...declaration,
-              sessions,
               totalHours,
-              updatedAt: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             }
           : declaration
       )
@@ -186,8 +174,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         declaration.id === id 
           ? {
               ...declaration,
-              status: 'submitted',
-              updatedAt: new Date().toISOString(),
+              status: 'soumise' as DeclarationStatus,
+              updated_at: new Date().toISOString(),
             }
           : declaration
       )
@@ -198,15 +186,18 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const verifyDeclaration = (id: string, verify: boolean, reason?: string) => {
     if (!user) return;
     
+    const userName = `${user.first_name} ${user.last_name}`;
+    
     setDeclarations(prev => 
       prev.map(declaration => 
         declaration.id === id 
           ? {
               ...declaration,
-              status: verify ? 'verified' : 'rejected',
-              updatedAt: new Date().toISOString(),
-              verifiedBy: verify ? user.name : undefined,
-              rejectionReason: verify ? undefined : reason,
+              status: verify ? 'verifiee' as DeclarationStatus : 'rejetee' as DeclarationStatus,
+              updated_at: new Date().toISOString(),
+              verified_by: verify ? user.id : undefined,
+              verified_at: verify ? new Date().toISOString() : undefined,
+              rejection_reason: verify ? undefined : reason,
             }
           : declaration
       )
@@ -220,15 +211,18 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const approveDeclaration = (id: string, approve: boolean, reason?: string) => {
     if (!user) return;
     
+    const userName = `${user.first_name} ${user.last_name}`;
+    
     setDeclarations(prev => 
       prev.map(declaration => 
         declaration.id === id 
           ? {
               ...declaration,
-              status: approve ? 'approved' : 'rejected',
-              updatedAt: new Date().toISOString(),
-              approvedBy: approve ? user.name : undefined,
-              rejectionReason: approve ? undefined : reason,
+              status: approve ? 'approuvee' as DeclarationStatus : 'rejetee' as DeclarationStatus,
+              updated_at: new Date().toISOString(),
+              approved_by: approve ? user.id : undefined,
+              approved_at: approve ? new Date().toISOString() : undefined,
+              rejection_reason: approve ? undefined : reason,
             }
           : declaration
       )

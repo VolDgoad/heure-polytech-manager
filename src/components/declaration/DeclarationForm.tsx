@@ -19,6 +19,29 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Department, CourseElement, Declaration } from '@/types';
 
+// Define a simplified course element type that matches what we get from Supabase
+interface CourseElementWithRelations {
+  id: string;
+  name: string;
+  teaching_unit_id: string;
+  teaching_units: {
+    name: string;
+    semester_id: string;
+    semesters: {
+      name: string;
+      level_id: string;
+      levels: {
+        name: string;
+        program_id: string;
+        programs: {
+          name: string;
+          department_id: string;
+        }
+      }
+    }
+  };
+}
+
 const formSchema = z.object({
   course_element_id: z.string().min(1, { message: "Veuillez sélectionner un élément constitutif" }),
   department_id: z.string().min(1, { message: "Veuillez sélectionner un département" }),
@@ -114,7 +137,17 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
           `);
 
         if (elementsError) throw elementsError;
-        setCourseElements(elementsData || []);
+        
+        // Transform the data to match CourseElement interface
+        const processedCourseElements = (elementsData || []).map((item: CourseElementWithRelations) => ({
+          id: item.id,
+          name: item.name,
+          teaching_unit_id: item.teaching_unit_id,
+          created_at: new Date().toISOString(), // Default value since not provided
+          updated_at: new Date().toISOString()  // Default value since not provided
+        }));
+        
+        setCourseElements(processedCourseElements);
       } catch (error: any) {
         toast.error(`Erreur lors du chargement des données: ${error.message}`);
       } finally {
@@ -234,7 +267,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    disabled={isReadOnly || user?.role !== 'admin' && user?.role !== 'directrice_etudes'}
+                    disabled={isReadOnly || (user?.role !== 'admin' && user?.role !== 'directrice_etudes')}
                   >
                     <FormControl>
                       <SelectTrigger>
