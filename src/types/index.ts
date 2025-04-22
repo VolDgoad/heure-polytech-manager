@@ -20,6 +20,10 @@ export interface Declaration {
   teacher_id: string;
   course_element_id: string;
   department_id: string;
+  program_id?: string;
+  level_id?: string;
+  semester_id?: string;
+  teaching_unit_id?: string;
   cm_hours: number;
   td_hours: number;
   tp_hours: number;

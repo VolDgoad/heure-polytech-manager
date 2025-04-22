@@ -51,13 +51,17 @@ export type Database = {
           declaration_date: string
           department_id: string
           id: string
+          level_id: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          program_id: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
+          semester_id: string | null
           status: Database["public"]["Enums"]["declaration_status"]
           td_hours: number
           teacher_id: string
+          teaching_unit_id: string | null
           tp_hours: number
           updated_at: string
           validated_at: string | null
@@ -74,13 +78,17 @@ export type Database = {
           declaration_date?: string
           department_id: string
           id?: string
+          level_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          program_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
+          semester_id?: string | null
           status?: Database["public"]["Enums"]["declaration_status"]
           td_hours?: number
           teacher_id: string
+          teaching_unit_id?: string | null
           tp_hours?: number
           updated_at?: string
           validated_at?: string | null
@@ -97,13 +105,17 @@ export type Database = {
           declaration_date?: string
           department_id?: string
           id?: string
+          level_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          program_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
+          semester_id?: string | null
           status?: Database["public"]["Enums"]["declaration_status"]
           td_hours?: number
           teacher_id?: string
+          teaching_unit_id?: string | null
           tp_hours?: number
           updated_at?: string
           validated_at?: string | null
@@ -134,6 +146,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "declarations_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "declarations_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "declarations_rejected_by_fkey"
             columns: ["rejected_by"]
             isOneToOne: false
@@ -141,10 +167,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "declarations_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "declarations_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "declarations_teaching_unit_id_fkey"
+            columns: ["teaching_unit_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_units"
             referencedColumns: ["id"]
           },
           {

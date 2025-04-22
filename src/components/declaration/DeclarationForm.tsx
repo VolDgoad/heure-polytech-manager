@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -17,34 +16,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Department, CourseElement, Declaration } from '@/types';
+import { Department, Program, Level, Semester, TeachingUnit, CourseElement, Declaration } from '@/types';
 
-// Define a simplified course element type that matches what we get from Supabase
-interface CourseElementWithRelations {
-  id: string;
-  name: string;
-  teaching_unit_id: string;
-  teaching_units: {
-    name: string;
-    semester_id: string;
-    semesters: {
-      name: string;
-      level_id: string;
-      levels: {
-        name: string;
-        program_id: string;
-        programs: {
-          name: string;
-          department_id: string;
-        }
-      }
-    }
-  };
+interface HierarchyData {
+  departments: Department[];
+  programs: Program[];
+  levels: Level[];
+  semesters: Semester[];
+  teachingUnits: TeachingUnit[];
+  courseElements: CourseElement[];
 }
 
 const formSchema = z.object({
-  course_element_id: z.string().min(1, { message: "Veuillez sélectionner un élément constitutif" }),
   department_id: z.string().min(1, { message: "Veuillez sélectionner un département" }),
+  program_id: z.string().min(1, { message: "Veuillez sélectionner une filière" }),
+  level_id: z.string().min(1, { message: "Veuillez sélectionner un niveau" }),
+  semester_id: z.string().min(1, { message: "Veuillez sélectionner un semestre" }),
+  teaching_unit_id: z.string().min(1, { message: "Veuillez sélectionner une unité d'enseignement" }),
+  course_element_id: z.string().min(1, { message: "Veuillez sélectionner un élément constitutif" }),
   cm_hours: z.preprocess(
     (val) => (val === '' ? 0 : Number(val)),
     z.number().min(0, { message: "La valeur ne peut pas être négative" })
@@ -73,24 +62,37 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
   const navigate = useNavigate();
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [courseElements, setCourseElements] = useState<CourseElement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [hierarchyData, setHierarchyData] = useState<HierarchyData>({
+    departments: [],
+    programs: [],
+    levels: [],
+    semesters: [],
+    teachingUnits: [],
+    courseElements: [],
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: existingDeclaration
       ? {
-          course_element_id: existingDeclaration.course_element_id,
           department_id: existingDeclaration.department_id,
+          program_id: existingDeclaration.program_id || '',
+          level_id: existingDeclaration.level_id || '',
+          semester_id: existingDeclaration.semester_id || '',
+          teaching_unit_id: existingDeclaration.teaching_unit_id || '',
+          course_element_id: existingDeclaration.course_element_id,
           cm_hours: existingDeclaration.cm_hours,
           td_hours: existingDeclaration.td_hours,
           tp_hours: existingDeclaration.tp_hours,
           declaration_date: new Date(existingDeclaration.declaration_date),
         }
       : {
-          course_element_id: '',
           department_id: user?.department_id || '',
+          program_id: '',
+          level_id: '',
+          semester_id: '',
+          teaching_unit_id: '',
+          course_element_id: '',
           cm_hours: 0,
           td_hours: 0,
           tp_hours: 0,
@@ -98,65 +100,70 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
         }
   });
 
+  // Watch form values to update dependent dropdowns
+  const watchDepartment = form.watch('department_id');
+  const watchProgram = form.watch('program_id');
+  const watchLevel = form.watch('level_id');
+  const watchSemester = form.watch('semester_id');
+  const watchTeachingUnit = form.watch('teaching_unit_id');
+
   useEffect(() => {
-    const fetchDepartmentsAndCourseElements = async () => {
+    const fetchHierarchyData = async () => {
       try {
-        setLoading(true);
-        // Fetching departments
-        const { data: departmentsData, error: departmentsError } = await supabase
-          .from('departments')
-          .select('*')
-          .order('name');
+        setSubmitting(true);
+        const [
+          { data: departments },
+          { data: programs },
+          { data: levels },
+          { data: semesters },
+          { data: teachingUnits },
+          { data: courseElements }
+        ] = await Promise.all([
+          supabase.from('departments').select('*').order('name'),
+          supabase.from('programs').select('*').order('name'),
+          supabase.from('levels').select('*').order('name'),
+          supabase.from('semesters').select('*').order('name'),
+          supabase.from('teaching_units').select('*').order('name'),
+          supabase.from('course_elements').select('*').order('name')
+        ]);
 
-        if (departmentsError) throw departmentsError;
-        setDepartments(departmentsData || []);
-
-        // Fetching course elements with their teaching units
-        const { data: elementsData, error: elementsError } = await supabase
-          .from('course_elements')
-          .select(`
-            id,
-            name,
-            teaching_unit_id,
-            teaching_units(
-              name,
-              semester_id,
-              semesters(
-                name,
-                level_id,
-                levels(
-                  name,
-                  program_id,
-                  programs(
-                    name,
-                    department_id
-                  )
-                )
-              )
-            )
-          `);
-
-        if (elementsError) throw elementsError;
-        
-        // Transform the data to match CourseElement interface
-        const processedCourseElements = (elementsData || []).map((item: CourseElementWithRelations) => ({
-          id: item.id,
-          name: item.name,
-          teaching_unit_id: item.teaching_unit_id,
-          created_at: new Date().toISOString(), // Default value since not provided
-          updated_at: new Date().toISOString()  // Default value since not provided
-        }));
-        
-        setCourseElements(processedCourseElements);
+        setHierarchyData({
+          departments: departments || [],
+          programs: programs || [],
+          levels: levels || [],
+          semesters: semesters || [],
+          teachingUnits: teachingUnits || [],
+          courseElements: courseElements || [],
+        });
       } catch (error: any) {
         toast.error(`Erreur lors du chargement des données: ${error.message}`);
       } finally {
-        setLoading(false);
+        setSubmitting(false);
       }
     };
 
-    fetchDepartmentsAndCourseElements();
+    fetchHierarchyData();
   }, []);
+
+  const filteredPrograms = hierarchyData.programs.filter(
+    program => program.department_id === watchDepartment
+  );
+
+  const filteredLevels = hierarchyData.levels.filter(
+    level => level.program_id === watchProgram
+  );
+
+  const filteredSemesters = hierarchyData.semesters.filter(
+    semester => semester.level_id === watchLevel
+  );
+
+  const filteredTeachingUnits = hierarchyData.teachingUnits.filter(
+    unit => unit.semester_id === watchSemester
+  );
+
+  const filteredCourseElements = hierarchyData.courseElements.filter(
+    element => element.teaching_unit_id === watchTeachingUnit
+  );
 
   const onSubmit = async (data: FormData) => {
     if (!user?.id) {
@@ -170,6 +177,10 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
         teacher_id: user.id,
         course_element_id: data.course_element_id,
         department_id: data.department_id,
+        program_id: data.program_id,
+        level_id: data.level_id,
+        semester_id: data.semester_id,
+        teaching_unit_id: data.teaching_unit_id,
         cm_hours: data.cm_hours,
         td_hours: data.td_hours,
         tp_hours: data.tp_hours,
@@ -206,37 +217,12 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
     }
   };
 
-  const submitDeclaration = async () => {
-    if (!existingDeclaration) return;
-    
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from('declarations')
-        .update({ status: 'soumise' })
-        .eq('id', existingDeclaration.id);
-        
-      if (error) throw error;
-      
-      toast.success("Déclaration soumise pour vérification");
-      navigate('/declarations');
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const calculateTotalHours = () => {
     const cm = form.watch('cm_hours') || 0;
     const td = form.watch('td_hours') || 0;
     const tp = form.watch('tp_hours') || 0;
     return cm + td + tp;
   };
-
-  if (loading) {
-    return <div className="flex justify-center p-8">Chargement des données...</div>;
-  }
 
   return (
     <Form {...form}>
@@ -254,8 +240,8 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
         </div>
 
         <Card className="border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200 py-3">
-            <CardTitle className="text-lg">Informations de la déclaration</CardTitle>
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="text-lg">Informations académiques</CardTitle>
           </CardHeader>
           <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -275,9 +261,125 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {departments.map((dept) => (
+                      {hierarchyData.departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="program_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Filière</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isReadOnly || !watchDepartment}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une filière" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredPrograms.map((program) => (
+                        <SelectItem key={program.id} value={program.id}>
+                          {program.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="level_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Niveau</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isReadOnly || !watchProgram}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un niveau" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredLevels.map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="semester_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Semestre</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isReadOnly || !watchLevel}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un semestre" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredSemesters.map((semester) => (
+                        <SelectItem key={semester.id} value={semester.id}>
+                          {semester.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="teaching_unit_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unité d'enseignement</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isReadOnly || !watchSemester}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une UE" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredTeachingUnits.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -292,11 +394,11 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
               name="course_element_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Élément Constitutif (EC)</FormLabel>
+                  <FormLabel>Élément constitutif</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !watchTeachingUnit}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -304,7 +406,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {courseElements.map((element) => (
+                      {filteredCourseElements.map((element) => (
                         <SelectItem key={element.id} value={element.id}>
                           {element.name}
                         </SelectItem>
