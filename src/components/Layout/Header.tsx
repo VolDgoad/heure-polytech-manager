@@ -13,12 +13,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, LogOut, Menu, User2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const isMobile = window.innerWidth < 768;
+  const isMobile = useIsMobile();
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);

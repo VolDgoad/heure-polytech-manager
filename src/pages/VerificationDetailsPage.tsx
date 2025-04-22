@@ -21,7 +21,7 @@ const VerificationDetailsPage = () => {
   
   const declaration = getDeclarationById(id || '');
   
-  if (!declaration || declaration.status !== 'submitted') {
+  if (!declaration || declaration.status !== 'soumise') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
@@ -60,7 +60,7 @@ const VerificationDetailsPage = () => {
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
-            Soumise le {format(parseISO(declaration.createdAt), 'PPP', { locale: fr })}
+            Soumise le {format(parseISO(declaration.created_at), 'PPP', { locale: fr })}
           </p>
         </div>
         
@@ -79,11 +79,11 @@ const VerificationDetailsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">Enseignant</h3>
-              <p className="mt-1">{declaration.userName}</p>
+              <p className="mt-1">{declaration.teacher_id}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Département</h3>
-              <p className="mt-1">{declaration.department}</p>
+              <p className="mt-1">{declaration.department_id}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>
@@ -98,7 +98,8 @@ const VerificationDetailsPage = () => {
           <h2 className="text-xl font-semibold">Détail des sessions</h2>
         </div>
         <div className="p-6">
-          <DeclarationForm existingDeclaration={declaration} isReadOnly={true} />
+          {/* We need to update this form to handle our declaration structure */}
+          {/* <DeclarationForm existingDeclaration={declaration} isReadOnly={true} /> */}
         </div>
       </div>
       

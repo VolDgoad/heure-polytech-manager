@@ -16,14 +16,14 @@ const DashboardPage = () => {
   const getStats = () => {
     switch (user.role) {
       case 'enseignant':
-        const draft = userDeclarations.filter(d => d.status === 'draft').length;
-        const submitted = userDeclarations.filter(d => d.status === 'submitted').length;
-        const verified = userDeclarations.filter(d => d.status === 'verified').length;
-        const approved = userDeclarations.filter(d => d.status === 'approved').length;
+        const draft = userDeclarations.filter(d => d.status === 'brouillon').length;
+        const submitted = userDeclarations.filter(d => d.status === 'soumise').length;
+        const verified = userDeclarations.filter(d => d.status === 'verifiee').length;
+        const approved = userDeclarations.filter(d => d.status === 'approuvee').length;
         
         const totalHours = userDeclarations
-          .filter(d => d.status === 'approved')
-          .reduce((sum, d) => sum + d.totalHours, 0);
+          .filter(d => d.status === 'approuvee')
+          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
         
         return [
           { title: 'Brouillons', value: draft, icon: FileText, color: 'text-gray-500' },
@@ -32,8 +32,8 @@ const DashboardPage = () => {
           { title: 'Heures validées', value: `${totalHours}h`, icon: FileCheck, color: 'text-purple-500' },
         ];
       case 'scolarite':
-        const pendingVerification = declarations.filter(d => d.status === 'submitted').length;
-        const totalVerified = declarations.filter(d => d.status === 'verified' || d.status === 'approved').length;
+        const pendingVerification = declarations.filter(d => d.status === 'soumise').length;
+        const totalVerified = declarations.filter(d => d.status === 'verifiee' || d.status === 'approuvee').length;
         
         return [
           { title: 'À vérifier', value: pendingVerification, icon: Clock, color: 'text-blue-500' },
@@ -42,35 +42,35 @@ const DashboardPage = () => {
         ];
       case 'chef_departement':
         const pendingApproval = declarations.filter(
-          d => d.status === 'verified' && d.department === user.department
+          d => d.status === 'verifiee' && d.department_id === user.department_id
         ).length;
         
         const totalApproved = declarations.filter(
-          d => d.status === 'approved' && d.department === user.department
+          d => d.status === 'approuvee' && d.department_id === user.department_id
         ).length;
         
         const departmentHours = declarations
-          .filter(d => d.status === 'approved' && d.department === user.department)
-          .reduce((sum, d) => sum + d.totalHours, 0);
+          .filter(d => d.status === 'approuvee' && d.department_id === user.department_id)
+          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
           
         return [
           { title: 'À valider', value: pendingApproval, icon: Clock, color: 'text-blue-500' },
           { title: 'Validées', value: totalApproved, icon: CheckCircle, color: 'text-green-500' },
           { title: 'Heures département', value: `${departmentHours}h`, icon: FileCheck, color: 'text-purple-500' },
         ];
-      case 'directrice':
-        const waitingDirector = declarations.filter(d => d.status === 'verified').length;
-        const finalApproved = declarations.filter(d => d.status === 'approved').length;
+      case 'directrice_etudes':
+        const waitingDirector = declarations.filter(d => d.status === 'verifiee').length;
+        const finalApproved = declarations.filter(d => d.status === 'approuvee').length;
         
         const allHours = declarations
-          .filter(d => d.status === 'approved')
-          .reduce((sum, d) => sum + d.totalHours, 0);
+          .filter(d => d.status === 'approuvee')
+          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
           
         return [
           { title: 'À approuver', value: waitingDirector, icon: Clock, color: 'text-blue-500' },
           { title: 'Approuvées', value: finalApproved, icon: CheckCircle, color: 'text-green-500' },
           { title: 'Total heures', value: `${allHours}h`, icon: FileCheck, color: 'text-purple-500' },
-          { title: 'Enseignants', value: new Set(declarations.map(d => d.userId)).size, icon: FileText, color: 'text-gray-500' },
+          { title: 'Enseignants', value: new Set(declarations.map(d => d.teacher_id)).size, icon: FileText, color: 'text-gray-500' },
         ];
       default:
         return [];
@@ -82,7 +82,7 @@ const DashboardPage = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Tableau de bord</h1>
         <p className="text-muted-foreground">
-          Bienvenue, <span className="font-medium">{user.name}</span>
+          Bienvenue, <span className="font-medium">{`${user.first_name} ${user.last_name}`}</span>
         </p>
       </div>
 
@@ -111,9 +111,9 @@ const DashboardPage = () => {
         <TabsContent value="pending" className="mt-6">
           {user.role === 'enseignant' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userDeclarations.filter(d => d.status === 'draft' || d.status === 'submitted' || d.status === 'verified').length > 0 ? (
+              {userDeclarations.filter(d => d.status === 'brouillon' || d.status === 'soumise' || d.status === 'verifiee').length > 0 ? (
                 userDeclarations
-                  .filter(d => d.status === 'draft' || d.status === 'submitted' || d.status === 'verified')
+                  .filter(d => d.status === 'brouillon' || d.status === 'soumise' || d.status === 'verifiee')
                   .slice(0, 6)
                   .map((declaration) => (
                     <DeclarationCard key={declaration.id} declaration={declaration} />
@@ -126,7 +126,7 @@ const DashboardPage = () => {
             </div>
           )}
           
-          {(user.role === 'scolarite' || user.role === 'chef_departement' || user.role === 'directrice') && (
+          {(user.role === 'scolarite' || user.role === 'chef_departement' || user.role === 'directrice_etudes') && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {pendingDeclarations.length > 0 ? (
                 pendingDeclarations.slice(0, 6).map((declaration) => (

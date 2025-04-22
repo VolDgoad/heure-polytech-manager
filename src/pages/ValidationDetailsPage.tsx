@@ -23,7 +23,7 @@ const ValidationDetailsPage = () => {
   
   const declaration = getDeclarationById(id || '');
   
-  if (!declaration || declaration.status !== 'verified') {
+  if (!declaration || declaration.status !== 'verifiee') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
@@ -43,7 +43,7 @@ const ValidationDetailsPage = () => {
   }
 
   // Check if user has permission to validate this declaration
-  if (user?.role === 'chef_departement' && declaration.department !== user.department) {
+  if (user?.role === 'chef_departement' && declaration.department_id !== user.department_id) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
@@ -82,7 +82,7 @@ const ValidationDetailsPage = () => {
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
-            Vérifiée le {format(parseISO(declaration.updatedAt), 'PPP', { locale: fr })}
+            Vérifiée le {format(parseISO(declaration.updated_at), 'PPP', { locale: fr })}
           </p>
         </div>
         
@@ -101,11 +101,11 @@ const ValidationDetailsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">Enseignant</h3>
-              <p className="mt-1">{declaration.userName}</p>
+              <p className="mt-1">{declaration.teacher_id}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Département</h3>
-              <p className="mt-1">{declaration.department}</p>
+              <p className="mt-1">{declaration.department_id}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>
@@ -113,18 +113,20 @@ const ValidationDetailsPage = () => {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Vérifiée par</h3>
-              <p className="mt-1">{declaration.verifiedBy}</p>
+              <p className="mt-1">{declaration.verified_by}</p>
             </div>
           </div>
         </CardContent>
       </Card>
       
+      {/* This component might need to be updated to handle the proper declaration structure */}
       <div className="bg-white border border-gray-200 rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold">Détail des sessions</h2>
         </div>
         <div className="p-6">
-          <DeclarationForm existingDeclaration={declaration} isReadOnly={true} />
+          {/* We need to update this form to handle our declaration structure */}
+          {/* <DeclarationForm existingDeclaration={declaration} isReadOnly={true} /> */}
         </div>
       </div>
       

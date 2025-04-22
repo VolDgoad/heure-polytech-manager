@@ -11,12 +11,8 @@ const ProfilePage = () => {
 
   if (!user) return null;
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
 
   const getRoleDisplay = (role: string) => {
@@ -27,7 +23,7 @@ const ProfilePage = () => {
         return 'Personnel de Scolarité';
       case 'chef_departement':
         return 'Chef de Département';
-      case 'directrice':
+      case 'directrice_etudes':
         return 'Directrice des Études';
       default:
         return role;
@@ -48,16 +44,16 @@ const ProfilePage = () => {
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
+              <AvatarImage src={user.photo_url} />
+              <AvatarFallback className="text-lg">{getInitials(user.first_name, user.last_name)}</AvatarFallback>
             </Avatar>
             
             <div className="text-center">
-              <h2 className="text-xl font-bold">{user.name}</h2>
+              <h2 className="text-xl font-bold">{`${user.first_name} ${user.last_name}`}</h2>
               <p className="text-sm text-muted-foreground">{getRoleDisplay(user.role)}</p>
-              {user.department && (
+              {user.department_id && (
                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 mt-2">
-                  {user.department}
+                  {user.department_id}
                 </span>
               )}
             </div>
@@ -72,7 +68,7 @@ const ProfilePage = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nom complet</Label>
-              <Input id="name" value={user.name} readOnly />
+              <Input id="name" value={`${user.first_name} ${user.last_name}`} readOnly />
             </div>
             
             <div className="space-y-2">
@@ -85,10 +81,10 @@ const ProfilePage = () => {
               <Input id="role" value={getRoleDisplay(user.role)} readOnly />
             </div>
             
-            {user.department && (
+            {user.department_id && (
               <div className="space-y-2">
                 <Label htmlFor="department">Département</Label>
-                <Input id="department" value={user.department} readOnly />
+                <Input id="department" value={user.department_id} readOnly />
               </div>
             )}
 

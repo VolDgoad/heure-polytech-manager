@@ -84,7 +84,9 @@ const DeclarationsPage = () => {
       let matchesSearch = true;
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
+        // Access course element name through the relation
         const courseName = declaration.course_elements?.name?.toLowerCase() || '';
+        // Access department name through the relation
         const departmentName = declaration.departments?.name?.toLowerCase() || '';
         
         matchesSearch = courseName.includes(searchLower) || 
@@ -119,13 +121,15 @@ const DeclarationsPage = () => {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex w-full max-w-sm items-center space-x-2">
-          <Input
-            placeholder="Rechercher par EC ou département..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
-            icon={<Search className="h-4 w-4 opacity-50" />}
-          />
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+            <Input
+              placeholder="Rechercher par EC ou département..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10"
+            />
+          </div>
           <Button variant="outline" onClick={() => setSearchTerm('')}>
             Réinitialiser
           </Button>
