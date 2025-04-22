@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,10 +19,7 @@ import ValidationDetailsPage from "./pages/ValidationDetailsPage";
 import ProfilePage from "./pages/ProfilePage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
-
-// Admin pages
-import DepartmentsPage from "./pages/admin/DepartmentsPage";
-import UsersPage from "./pages/admin/UsersPage";
+import RegisterPage from "./pages/RegisterPage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +32,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
             
             <Route
@@ -130,7 +127,6 @@ const App = () => (
                 } 
               />
 
-              {/* Admin routes */}
               <Route 
                 path="admin/departments" 
                 element={

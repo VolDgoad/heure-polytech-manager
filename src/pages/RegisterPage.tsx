@@ -1,11 +1,11 @@
+
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -14,20 +14,29 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { Link } from 'react-router-dom';
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: "L'adresse email n'est pas valide.",
+  email: z
+    .string()
+    .email("L'adresse email n'est pas valide.")
+    .refine((email) => email.endsWith('@uam.edu.sn'), {
+      message: "L'adresse email doit être au format @uam.edu.sn",
+    }),
+  password: z.string().min(6, {
+    message: 'Le mot de passe doit contenir au moins 6 caractères.',
   }),
-  password: z.string().min(1, {
-    message: "Le mot de passe est requis.",
+  first_name: z.string().min(1, {
+    message: 'Le prénom est requis.',
+  }),
+  last_name: z.string().min(1, {
+    message: 'Le nom est requis.',
   }),
 });
 
-const LoginPage = () => {
-  const { login } = useAuth();
+const RegisterPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -36,20 +45,36 @@ const LoginPage = () => {
     defaultValues: {
       email: '',
       password: '',
+      first_name: '',
+      last_name: '',
     },
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await login(data.email, data.password);
-      navigate('/dashboard');
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.first_name,
+            last_name: data.last_name,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Compte créé avec succès! Veuillez vérifier votre email.');
+      navigate('/login');
+    } catch (error: any) {
+      if (error.message === 'User already registered') {
+        toast.error('Un compte existe déjà avec cette adresse email.');
       } else {
-        toast.error("Une erreur s'est produite lors de la connexion.");
+        toast.error(error.message || "Une erreur s'est produite lors de l'inscription.");
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -61,7 +86,7 @@ const LoginPage = () => {
           Polytech Diamniadio
         </h1>
         <h2 className="mt-2 text-center text-xl font-semibold text-polytech-primary">
-          Plateforme de Déclaration des Charges Horaires
+          Créer un compte
         </h2>
       </div>
 
@@ -71,12 +96,44 @@ const LoginPage = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prénom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Prénom" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nom" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Adresse e-mail</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@polytech.edu" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="email@uam.edu.sn" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -90,7 +147,11 @@ const LoginPage = () => {
                   <FormItem>
                     <FormLabel>Mot de passe</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -103,7 +164,7 @@ const LoginPage = () => {
                   className="w-full bg-polytech-primary hover:bg-polytech-primary/90"
                   disabled={loading}
                 >
-                  {loading ? 'Connexion...' : 'Se connecter'}
+                  {loading ? 'Inscription...' : "S'inscrire"}
                 </Button>
               </div>
             </form>
@@ -111,28 +172,13 @@ const LoginPage = () => {
 
           <div className="mt-6">
             <div className="text-sm text-center">
-              <span>Vous n'avez pas de compte? </span>
+              <span>Vous avez déjà un compte? </span>
               <Link 
-                to="/register" 
+                to="/login" 
                 className="font-medium text-polytech-primary hover:text-polytech-primary/90"
               >
-                S'inscrire
+                Se connecter
               </Link>
-            </div>
-
-            <div className="mt-2 grid grid-cols-1 gap-2">
-              <div className="text-xs bg-gray-50 p-2 rounded">
-                <strong>Enseignant:</strong> enseignant@polytech.edu / password
-              </div>
-              <div className="text-xs bg-gray-50 p-2 rounded">
-                <strong>Scolarité:</strong> scolarite@polytech.edu / password
-              </div>
-              <div className="text-xs bg-gray-50 p-2 rounded">
-                <strong>Chef de département:</strong> chef@polytech.edu / password
-              </div>
-              <div className="text-xs bg-gray-50 p-2 rounded">
-                <strong>Directrice:</strong> directrice@polytech.edu / password
-              </div>
             </div>
           </div>
         </div>
@@ -141,4 +187,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;
