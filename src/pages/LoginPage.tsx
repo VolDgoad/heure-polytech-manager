@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -27,7 +28,7 @@ const formSchema = z.object({
 });
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -43,13 +44,16 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await login(data.email, data.password);
-      navigate('/dashboard');
+      // Don't navigate here - the auth state change will trigger navigation in AuthContext
+      toast.success("Connexion réussie");
     } catch (error) {
+      console.error("Login error:", error);
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Une erreur s'est produite lors de la connexion.");
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -101,7 +105,7 @@ const LoginPage = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-polytech-primary hover:bg-polytech-primary/90"
-                  disabled={loading}
+                  disabled={loading || authLoading}
                 >
                   {loading ? 'Connexion...' : 'Se connecter'}
                 </Button>
