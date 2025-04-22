@@ -1,136 +1,97 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
-import { User, UserRole, TeacherGrade, Department } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/sonner';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
   TableRow 
-} from '@/components/ui/table';
-import {
+} from "@/components/ui/table";
+import { 
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle, 
   DialogTrigger,
   DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  DialogClose 
+} from "@/components/ui/dialog";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
   SelectValue 
-} from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { UserPlus, Pencil, Trash2, Search } from 'lucide-react';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { UserPlus, UserCog, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 
-const formSchema = z.object({
-  email: z.string().email({ message: "L'adresse e-mail est invalide" }),
-  first_name: z.string().min(2, { message: "Le prénom doit contenir au moins 2 caractères" }),
-  last_name: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
-  role: z.enum(['enseignant', 'chef_departement', 'directrice_etudes', 'scolarite', 'admin']),
-  department_id: z.string().optional(),
-  grade: z.enum([
-    'Professeur Titulaire des Universités',
-    'Maitre de Conférences Assimilé',
-    'Maitre de Conférences Assimilé Stagiaire',
-    'Maitre de Conférences Titulaire',
-    'Maitre-assistant',
-    'Assistant de Deuxième Classe',
-    'Assistant dispensant des Cours Magistraux',
-    'Assistant ne dispensant pas de Cours Magistraux'
-  ]).optional(),
-  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }).optional(),
-});
+interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  department_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-const roleLabels: Record<UserRole, string> = {
-  enseignant: 'Enseignant',
-  chef_departement: 'Chef de département',
-  directrice_etudes: 'Directrice des études',
-  scolarite: 'Scolarité',
-  admin: 'Administrateur'
-};
+interface Department {
+  id: string;
+  name: string;
+}
+
+const USER_ROLES = [
+  { value: 'enseignant', label: 'Enseignant' },
+  { value: 'scolarite', label: 'Scolarité' },
+  { value: 'chef_departement', label: 'Chef de département' },
+  { value: 'directrice_etudes', label: 'Directrice des études' },
+  { value: 'admin', label: 'Administrateur' }
+];
 
 const UsersPage = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      first_name: "",
-      last_name: "",
-      role: "enseignant" as UserRole,
-      department_id: undefined,
-      grade: undefined,
-      password: "",
-    },
-  });
+  // New user form state
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [newUserRole, setNewUserRole] = useState("enseignant");
+  const [newUserDepartment, setNewUserDepartment] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
   
+  // Edit user form state
+  const [editUserRole, setEditUserRole] = useState("");
+  const [editUserDepartment, setEditUserDepartment] = useState("");
+
   useEffect(() => {
-    if (dialogMode === 'edit' && currentUser) {
-      form.reset({
-        email: currentUser.email,
-        first_name: currentUser.first_name,
-        last_name: currentUser.last_name,
-        role: currentUser.role,
-        department_id: currentUser.department_id || undefined,
-        grade: currentUser.grade || undefined,
-        password: undefined,
-      });
-    } else {
-      form.reset({
-        email: "",
-        first_name: "",
-        last_name: "",
-        role: "enseignant",
-        department_id: undefined,
-        grade: undefined,
-        password: "",
-      });
-    }
-  }, [dialogMode, currentUser, form]);
-  
+    fetchUsers();
+    fetchDepartments();
+  }, []);
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          departments(name)
-        `)
-        .order('last_name');
-      
+        .from("profiles")
+        .select("*")
+        .order("last_name");
+
       if (error) throw error;
+      
       setUsers(data || []);
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
@@ -138,452 +99,362 @@ const UsersPage = () => {
       setLoading(false);
     }
   };
-  
+
   const fetchDepartments = async () => {
     try {
       const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .order('name');
-      
+        .from("departments")
+        .select("id, name")
+        .order("name");
+
       if (error) throw error;
+      
       setDepartments(data || []);
     } catch (error: any) {
-      console.error('Error fetching departments:', error);
-    }
-  };
-  
-  useEffect(() => {
-    fetchUsers();
-    fetchDepartments();
-  }, []);
-  
-  const handleOpenDialog = (mode: 'add' | 'edit', user?: User) => {
-    setDialogMode(mode);
-    setCurrentUser(user || null);
-    setDialogOpen(true);
-  };
-  
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      if (dialogMode === 'add') {
-        // Create a new user through Supabase Auth
-        if (!values.password) {
-          toast.error("Le mot de passe est requis pour créer un nouvel utilisateur");
-          return;
-        }
-        
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: values.email,
-          password: values.password,
-          options: {
-            data: {
-              first_name: values.first_name,
-              last_name: values.last_name,
-              role: values.role,
-            }
-          }
-        });
-        
-        if (authError) throw authError;
-        
-        // Update additional fields in the profile
-        if (authData.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              department_id: values.department_id,
-              grade: values.grade,
-            })
-            .eq('id', authData.user.id);
-            
-          if (profileError) throw profileError;
-        }
-        
-        toast.success("Utilisateur créé avec succès");
-      } else if (dialogMode === 'edit' && currentUser) {
-        // Update profile fields
-        const updateData: any = {
-          first_name: values.first_name,
-          last_name: values.last_name,
-          role: values.role,
-          department_id: values.department_id,
-          grade: values.grade,
-        };
-        
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('id', currentUser.id);
-          
-        if (profileError) throw profileError;
-        
-        // Update email if needed (admin only)
-        if (values.email !== currentUser.email && user?.role === 'admin') {
-          const { error: emailError } = await supabase.auth.admin.updateUserById(
-            currentUser.id,
-            { email: values.email }
-          );
-          
-          if (emailError) throw emailError;
-        }
-        
-        // Update password if provided
-        if (values.password) {
-          const { error: passwordError } = await supabase.auth.admin.updateUserById(
-            currentUser.id,
-            { password: values.password }
-          );
-          
-          if (passwordError) throw passwordError;
-        }
-        
-        toast.success("Utilisateur mis à jour avec succès");
-      }
-      
-      setDialogOpen(false);
-      fetchUsers();
-    } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
     }
   };
-  
-  const handleDelete = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur? Cette action est irréversible.")) {
+
+  const resetNewUserForm = () => {
+    setNewUserEmail("");
+    setNewUserFirstName("");
+    setNewUserLastName("");
+    setNewUserRole("enseignant");
+    setNewUserDepartment("");
+    setNewUserPassword("");
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserFirstName || !newUserLastName || !newUserRole || !newUserPassword) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    
+
+    if (!newUserEmail.includes("@")) {
+      toast.error("Veuillez entrer une adresse email valide");
+      return;
+    }
+
     try {
-      // Delete the user from Supabase Auth (this will cascade to profiles via trigger)
-      const { error } = await supabase.auth.admin.deleteUser(id);
-        
-      if (error) throw error;
-      toast.success("Utilisateur supprimé avec succès");
+      // Create user in auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            first_name: newUserFirstName,
+            last_name: newUserLastName,
+            role: newUserRole
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Update the profiles table if needed with department_id
+      if (newUserDepartment) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ department_id: newUserDepartment })
+          .eq("id", authData.user?.id);
+
+        if (profileError) throw profileError;
+      }
+
+      toast.success("Utilisateur créé avec succès");
+      resetNewUserForm();
       fetchUsers();
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
     }
   };
-  
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.email.toLowerCase().includes(searchLower) ||
-      user.first_name.toLowerCase().includes(searchLower) ||
-      user.last_name.toLowerCase().includes(searchLower) ||
-      roleLabels[user.role].toLowerCase().includes(searchLower)
-    );
-  });
-  
-  if (!user || !['admin', 'directrice_etudes'].includes(user.role)) {
-    return (
-      <div className="flex justify-center items-center h-[60vh]">
-        <p className="text-lg text-gray-600">
-          Vous n'avez pas les droits pour accéder à cette page.
-        </p>
-      </div>
-    );
-  }
-  
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const updates: any = {};
+      
+      if (editUserRole) {
+        updates.role = editUserRole;
+      }
+      
+      if (editUserDepartment) {
+        updates.department_id = editUserDepartment;
+      }
+      
+      if (Object.keys(updates).length === 0) {
+        toast.error("Aucune modification n'a été faite");
+        return;
+      }
+      
+      updates.updated_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("id", selectedUser.id);
+
+      if (error) throw error;
+
+      toast.success("Utilisateur mis à jour avec succès");
+      setSelectedUser(null);
+      setEditUserRole("");
+      setEditUserDepartment("");
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+    }
+  };
+
+  const getDepartmentName = (departmentId: string | null) => {
+    if (!departmentId) return "Non assigné";
+    const department = departments.find((d) => d.id === departmentId);
+    return department ? department.name : "Inconnu";
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'enseignant':
+        return <Badge variant="outline">Enseignant</Badge>;
+      case 'scolarite':
+        return <Badge variant="secondary">Scolarité</Badge>;
+      case 'chef_departement':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">Chef de département</Badge>;
+      case 'directrice_etudes':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-300">Directrice des études</Badge>;
+      case 'admin':
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Administrateur</Badge>;
+      default:
+        return <Badge variant="outline">{role}</Badge>;
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Gestion des Utilisateurs</h1>
-          <p className="text-muted-foreground">
-            Créer, modifier ou supprimer des utilisateurs
-          </p>
-        </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog('add')}>
-              <UserPlus className="mr-2 h-4 w-4" /> Nouvel Utilisateur
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>
-                {dialogMode === 'add' ? 'Ajouter un utilisateur' : 'Modifier l\'utilisateur'}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="first_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prénom</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Prénom" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="last_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nom" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Gestion des Utilisateurs</CardTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-polytech-primary hover:bg-polytech-primary/90">
+                <UserPlus className="mr-2 h-4 w-4" /> Ajouter un utilisateur
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Ajouter un nouvel utilisateur</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="firstName" className="text-right">
+                    Prénom
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={newUserFirstName}
+                    onChange={(e) => setNewUserFirstName(e.target.value)}
+                    className="col-span-3"
                   />
                 </div>
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="exemple@polytech.edu" 
-                          {...field} 
-                          disabled={dialogMode === 'edit' && user?.role !== 'admin'}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {(dialogMode === 'add' || (dialogMode === 'edit' && user?.role === 'admin')) && (
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Mot de passe
-                          {dialogMode === 'edit' && (
-                            <span className="text-xs text-gray-500 ml-2">
-                              (laisser vide pour ne pas modifier)
-                            </span>
-                          )}
-                        </FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="******" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rôle</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un rôle" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="enseignant">Enseignant</SelectItem>
-                            <SelectItem value="chef_departement">Chef de département</SelectItem>
-                            <SelectItem value="directrice_etudes">Directrice des études</SelectItem>
-                            <SelectItem value="scolarite">Scolarité</SelectItem>
-                            <SelectItem value="admin">Administrateur</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="department_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Département</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un département" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="">Non spécifié</SelectItem>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept.id} value={dept.id}>
-                                {dept.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="lastName" className="text-right">
+                    Nom
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                    className="col-span-3"
                   />
                 </div>
-                
-                <FormField
-                  control={form.control}
-                  name="grade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grade (pour les enseignants)</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un grade" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="">Non spécifié</SelectItem>
-                          <SelectItem value="Professeur Titulaire des Universités">
-                            Professeur Titulaire des Universités
-                          </SelectItem>
-                          <SelectItem value="Maitre de Conférences Assimilé">
-                            Maitre de Conférences Assimilé
-                          </SelectItem>
-                          <SelectItem value="Maitre de Conférences Assimilé Stagiaire">
-                            Maitre de Conférences Assimilé Stagiaire
-                          </SelectItem>
-                          <SelectItem value="Maitre de Conférences Titulaire">
-                            Maitre de Conférences Titulaire
-                          </SelectItem>
-                          <SelectItem value="Maitre-assistant">
-                            Maitre-assistant
-                          </SelectItem>
-                          <SelectItem value="Assistant de Deuxième Classe">
-                            Assistant de Deuxième Classe
-                          </SelectItem>
-                          <SelectItem value="Assistant dispensant des Cours Magistraux">
-                            Assistant dispensant des Cours Magistraux
-                          </SelectItem>
-                          <SelectItem value="Assistant ne dispensant pas de Cours Magistraux">
-                            Assistant ne dispensant pas de Cours Magistraux
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button">Annuler</Button>
-                  </DialogClose>
-                  <Button type="submit">
-                    {dialogMode === 'add' ? 'Ajouter' : 'Mettre à jour'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="flex w-full max-w-sm items-center space-x-2">
-        <Input
-          placeholder="Rechercher un utilisateur..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-          icon={<Search className="h-4 w-4 opacity-50" />}
-        />
-        <Button variant="outline" onClick={() => setSearchTerm('')}>
-          Réinitialiser
-        </Button>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center py-10">
-          <p>Chargement des utilisateurs...</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Département</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="password" className="text-right">
+                    Mot de passe
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="role" className="text-right">
+                    Rôle
+                  </Label>
+                  <Select value={newUserRole} onValueChange={setNewUserRole}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Sélectionner un rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USER_ROLES.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="department" className="text-right">
+                    Département
+                  </Label>
+                  <Select value={newUserDepartment} onValueChange={setNewUserDepartment}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Sélectionner un département" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Non assigné</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Annuler</Button>
+                </DialogClose>
+                <Button onClick={handleCreateUser} className="bg-polytech-primary hover:bg-polytech-primary/90">
+                  Créer l'utilisateur
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p>Chargement des utilisateurs...</p>
+          ) : users.length === 0 ? (
+            <p>Aucun utilisateur trouvé.</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                    Aucun utilisateur trouvé
-                  </TableCell>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead>Département</TableHead>
+                  <TableHead>Date d'inscription</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">
+                    <TableCell>
                       {user.first_name} {user.last_name}
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{getDepartmentName(user.department_id)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{roleLabels[user.role]}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.departments?.name || '-'}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {user.grade || '-'}
+                      {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleOpenDialog('edit', user)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mr-2"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setEditUserRole(user.role);
+                              setEditUserDepartment(user.department_id || "");
+                            }}
+                          >
+                            <UserCog className="h-4 w-4 mr-1" />
+                            Modifier
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>
+                              Modifier l'utilisateur: {user.first_name} {user.last_name}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-role" className="text-right">
+                                Rôle
+                              </Label>
+                              <Select 
+                                value={editUserRole} 
+                                onValueChange={setEditUserRole}
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Sélectionner un rôle" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {USER_ROLES.map((role) => (
+                                    <SelectItem key={role.value} value={role.value}>
+                                      {role.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-department" className="text-right">
+                                Département
+                              </Label>
+                              <Select
+                                value={editUserDepartment}
+                                onValueChange={setEditUserDepartment}
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Sélectionner un département" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Non assigné</SelectItem>
+                                  {departments.map((dept) => (
+                                    <SelectItem key={dept.id} value={dept.id}>
+                                      {dept.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button variant="outline">Annuler</Button>
+                            </DialogClose>
+                            <Button 
+                              onClick={handleUpdateUser}
+                              className="bg-polytech-primary hover:bg-polytech-primary/90"
+                            >
+                              Mettre à jour
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

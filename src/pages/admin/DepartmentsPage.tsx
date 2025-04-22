@@ -1,11 +1,9 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
-import { Department } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/sonner';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Table, 
   TableBody, 
@@ -13,68 +11,51 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+} from "@/components/ui/table";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
   DialogTrigger,
   DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+  DialogClose
+} from "@/components/ui/dialog";
+import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Pencil, Trash2, Plus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Le nom du département doit contenir au moins 2 caractères",
-  }),
-});
+interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const DepartmentsPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
-  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-    },
-  });
-  
+  const [newDepartment, setNewDepartment] = useState("");
+  const [editDepartment, setEditDepartment] = useState<Department | null>(null);
+  const [editName, setEditName] = useState("");
+
   useEffect(() => {
-    if (dialogMode === 'edit' && currentDepartment) {
-      form.reset({ name: currentDepartment.name });
-    } else {
-      form.reset({ name: "" });
-    }
-  }, [dialogMode, currentDepartment, form]);
-  
+    fetchDepartments();
+  }, []);
+
   const fetchDepartments = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .order('name');
-      
+        .from("departments")
+        .select("*")
+        .order("name");
+
       if (error) throw error;
+      
       setDepartments(data || []);
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
@@ -82,177 +63,195 @@ const DepartmentsPage = () => {
       setLoading(false);
     }
   };
-  
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-  
-  const handleOpenDialog = (mode: 'add' | 'edit', department?: Department) => {
-    setDialogMode(mode);
-    setCurrentDepartment(department || null);
-    setDialogOpen(true);
-  };
-  
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+
+  const handleAddDepartment = async () => {
+    if (!newDepartment.trim()) {
+      toast.error("Le nom du département ne peut pas être vide");
+      return;
+    }
+
     try {
-      if (dialogMode === 'add') {
-        const { error } = await supabase
-          .from('departments')
-          .insert({ name: values.name });
-          
-        if (error) throw error;
-        toast.success("Département créé avec succès");
-      } else if (dialogMode === 'edit' && currentDepartment) {
-        const { error } = await supabase
-          .from('departments')
-          .update({ name: values.name })
-          .eq('id', currentDepartment.id);
-          
-        if (error) throw error;
-        toast.success("Département mis à jour avec succès");
-      }
-      
-      setDialogOpen(false);
-      fetchDepartments();
+      const { data, error } = await supabase
+        .from("departments")
+        .insert([{ name: newDepartment.trim() }])
+        .select();
+
+      if (error) throw error;
+
+      setDepartments([...(data || []), ...departments]);
+      setNewDepartment("");
+      toast.success("Département ajouté avec succès");
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
     }
   };
-  
-  const handleDelete = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce département? Cette action est irréversible.")) {
+
+  const handleUpdateDepartment = async () => {
+    if (!editDepartment || !editName.trim()) {
+      toast.error("Le nom du département ne peut pas être vide");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("departments")
+        .update({ name: editName.trim(), updated_at: new Date().toISOString() })
+        .eq("id", editDepartment.id);
+
+      if (error) throw error;
+
+      setDepartments(
+        departments.map((dept) =>
+          dept.id === editDepartment.id
+            ? { ...dept, name: editName.trim(), updated_at: new Date().toISOString() }
+            : dept
+        )
+      );
+      
+      setEditDepartment(null);
+      setEditName("");
+      toast.success("Département mis à jour avec succès");
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+    }
+  };
+
+  const handleDeleteDepartment = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce département ?")) {
       return;
     }
     
     try {
       const { error } = await supabase
-        .from('departments')
+        .from("departments")
         .delete()
-        .eq('id', id);
-        
+        .eq("id", id);
+
       if (error) throw error;
+
+      setDepartments(departments.filter((dept) => dept.id !== id));
       toast.success("Département supprimé avec succès");
-      fetchDepartments();
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
     }
   };
-  
-  if (!user || !['admin', 'directrice_etudes'].includes(user.role)) {
-    return (
-      <div className="flex justify-center items-center h-[60vh]">
-        <p className="text-lg text-gray-600">
-          Vous n'avez pas les droits pour accéder à cette page.
-        </p>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Gestion des Départements</h1>
-          <p className="text-muted-foreground">
-            Créer, modifier ou supprimer des départements
-          </p>
-        </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog('add')}>
-              <Plus className="mr-2 h-4 w-4" /> Nouveau Département
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {dialogMode === 'add' ? 'Ajouter un département' : 'Modifier le département'}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom du département</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Informatique" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Gestion des Départements</CardTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-polytech-primary hover:bg-polytech-primary/90">
+                <Plus className="mr-2 h-4 w-4" /> Ajouter
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Ajouter un département</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <Input
+                  placeholder="Nom du département"
+                  value={newDepartment}
+                  onChange={(e) => setNewDepartment(e.target.value)}
                 />
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button">Annuler</Button>
-                  </DialogClose>
-                  <Button type="submit">
-                    {dialogMode === 'add' ? 'Ajouter' : 'Mettre à jour'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center py-10">
-          <p>Chargement des départements...</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Date de création</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {departments.length === 0 ? (
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Annuler</Button>
+                </DialogClose>
+                <Button 
+                  onClick={handleAddDepartment}
+                  className="bg-polytech-primary hover:bg-polytech-primary/90"
+                >
+                  Ajouter
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p>Chargement des départements...</p>
+          ) : departments.length === 0 ? (
+            <p>Aucun département n'a été créé.</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
-                    Aucun département trouvé
-                  </TableCell>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Date de création</TableHead>
+                  <TableHead>Dernière mise à jour</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                departments.map((department) => (
+              </TableHeader>
+              <TableBody>
+                {departments.map((department) => (
                   <TableRow key={department.id}>
-                    <TableCell className="font-medium">{department.name}</TableCell>
+                    <TableCell>{department.name}</TableCell>
                     <TableCell>
-                      {format(new Date(department.created_at), 'dd/MM/yyyy')}
+                      {new Date(department.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(department.updated_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleOpenDialog('edit', department)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(department.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="mr-2"
+                            onClick={() => {
+                              setEditDepartment(department);
+                              setEditName(department.name);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Modifier le département</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <Input
+                              placeholder="Nom du département"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                            />
+                          </div>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button variant="outline">Annuler</Button>
+                            </DialogClose>
+                            <Button
+                              onClick={handleUpdateDepartment}
+                              className="bg-polytech-primary hover:bg-polytech-primary/90"
+                            >
+                              Mettre à jour
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="text-destructive"
+                        onClick={() => handleDeleteDepartment(department.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
