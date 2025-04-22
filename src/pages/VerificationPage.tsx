@@ -13,8 +13,12 @@ const VerificationPage = () => {
   // Filter declarations that are submitted and pending verification
   const pendingVerifications = declarations.filter(d => d.status === 'soumise');
 
-  // Note: This filtering needs to be adjusted since we don't have userName property
-  const filteredDeclarations = pendingVerifications;
+  // Filter by search term
+  const filteredDeclarations = pendingVerifications.filter(d => {
+    if (!searchTerm) return true;
+    return d.teacherName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           d.departmentName?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="space-y-6">

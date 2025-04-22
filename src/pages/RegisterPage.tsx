@@ -74,6 +74,7 @@ const RegisterPage = () => {
       } else {
         toast.error(error.message || "Une erreur s'est produite lors de l'inscription.");
       }
+      console.error('Registration error:', error);
     } finally {
       setLoading(false);
     }

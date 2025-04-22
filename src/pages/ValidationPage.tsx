@@ -31,10 +31,13 @@ const ValidationPage = () => {
       })()
     : [];
 
-  // Note: We need to patch this part as Declaration type doesn't have these fields
-  // For demonstration, we're handling it as if they exist, but this should be updated
-  // in the component that uses this data
-  const filteredDeclarations = pendingValidations;
+  // Filter by search term
+  const filteredDeclarations = pendingValidations.filter(d => {
+    // Since teacherName is a client-side computed property, ensure it exists
+    if (!searchTerm) return true;
+    return d.teacherName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           d.departmentName?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="space-y-6">

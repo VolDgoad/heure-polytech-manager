@@ -1,6 +1,20 @@
 
 export type DeclarationStatus = 'brouillon' | 'soumise' | 'verifiee' | 'validee' | 'rejetee' | 'approuvee';
 
+export type PaymentStatus = 'non_paye' | 'en_cours' | 'paye';
+
+export type UserRole = 'enseignant' | 'chef_departement' | 'directrice_etudes' | 'scolarite' | 'admin';
+
+export type TeacherGrade = 
+  | 'Professeur Titulaire des Universités'
+  | 'Maitre de Conférences Assimilé'
+  | 'Maitre de Conférences Assimilé Stagiaire'
+  | 'Maitre de Conférences Titulaire'
+  | 'Maitre-assistant'
+  | 'Assistant de Deuxième Classe'
+  | 'Assistant dispensant des Cours Magistraux'
+  | 'Assistant ne dispensant pas de Cours Magistraux';
+
 export interface Declaration {
   id: string;
   teacher_id: string;
@@ -42,4 +56,28 @@ export interface User {
   signature_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseElement {
+  id: string;
+  name: string;
+  teaching_unit_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseSession {
+  id: string;
+  date: string;
+  duration: number;
+  type: 'cm' | 'td' | 'tp';
+  location: string;
+  description?: string;
 }
