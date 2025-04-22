@@ -125,7 +125,13 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const createDeclaration = (sessions: CourseSession[]) => {
     if (!user) return;
     
-    const totalHours = sessions.reduce((total, session) => total + session.hoursCount, 0);
+    // Calculate total hours from sessions
+    const totalHours = sessions.reduce((total, session) => {
+      if (session.hoursCount) {
+        return total + session.hoursCount;
+      }
+      return total + session.duration;
+    }, 0);
     
     const userName = `${user.first_name} ${user.last_name}`;
     
@@ -152,7 +158,13 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const updateDeclaration = (id: string, sessions: CourseSession[]) => {
-    const totalHours = sessions.reduce((total, session) => total + session.hoursCount, 0);
+    // Calculate total hours from sessions
+    const totalHours = sessions.reduce((total, session) => {
+      if (session.hoursCount) {
+        return total + session.hoursCount;
+      }
+      return total + session.duration;
+    }, 0);
     
     setDeclarations(prev => 
       prev.map(declaration => 

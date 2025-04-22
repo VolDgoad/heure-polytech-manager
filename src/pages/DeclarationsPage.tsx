@@ -68,7 +68,16 @@ const DeclarationsPage = () => {
         const { data, error } = await query;
         
         if (error) throw error;
-        setDeclarations(data || []);
+        
+        // Transform data to include departmentName and course element name
+        const transformedData = data?.map(d => ({
+          ...d,
+          departmentName: d.departments?.name || 'Non spécifié',
+          teacherName: 'Enseignant', // This would be populated from a join with profiles
+          totalHours: Number(d.cm_hours) + Number(d.td_hours) + Number(d.tp_hours)
+        })) || [];
+        
+        setDeclarations(transformedData);
       } catch (error: any) {
         console.error('Error fetching declarations:', error);
       } finally {
@@ -84,13 +93,10 @@ const DeclarationsPage = () => {
       let matchesSearch = true;
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        // Access course element name through the relation
-        const courseName = declaration.course_elements?.name?.toLowerCase() || '';
-        // Access department name through the relation
-        const departmentName = declaration.departments?.name?.toLowerCase() || '';
-        
-        matchesSearch = courseName.includes(searchLower) || 
-                      departmentName.includes(searchLower);
+        // Look for matches in departmentName and course_element_id
+        matchesSearch = 
+          declaration.departmentName?.toLowerCase().includes(searchLower) || 
+          declaration.course_element_id.toLowerCase().includes(searchLower);
       }
       
       let matchesStatus = true;
@@ -172,7 +178,7 @@ const DeclarationsPage = () => {
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="font-medium text-sm truncate flex-1">
-                    {declaration.course_elements?.name || 'EC non spécifié'}
+                    {declaration.course_element_id}
                   </h3>
                   <Badge className={statusColors[declaration.status]}>
                     {statusLabels[declaration.status]}
@@ -180,7 +186,7 @@ const DeclarationsPage = () => {
                 </div>
                 
                 <p className="text-sm text-gray-600 mb-2">
-                  Département: {declaration.departments?.name || 'Non spécifié'}
+                  Département: {declaration.departmentName || 'Non spécifié'}
                 </p>
                 
                 <p className="text-sm text-gray-600 mb-3">

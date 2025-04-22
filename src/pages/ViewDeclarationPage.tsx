@@ -52,8 +52,8 @@ const ViewDeclarationPage = () => {
     );
   }
 
-  const canDelete = user?.id === declaration.userId && declaration.status === 'draft';
-  const canEdit = user?.id === declaration.userId && declaration.status === 'draft';
+  const canDelete = user?.id === declaration.teacher_id && declaration.status === 'brouillon';
+  const canEdit = user?.id === declaration.teacher_id && declaration.status === 'brouillon';
   
   const handleDelete = () => {
     deleteDeclaration(declaration.id);
@@ -69,7 +69,7 @@ const ViewDeclarationPage = () => {
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
-            Créée le {format(parseISO(declaration.createdAt), 'PPP', { locale: fr })}
+            Créée le {format(parseISO(declaration.created_at), 'PPP', { locale: fr })}
           </p>
         </div>
         
@@ -120,11 +120,11 @@ const ViewDeclarationPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">Enseignant</h3>
-              <p className="mt-1">{declaration.userName}</p>
+              <p className="mt-1">{declaration.teacherName}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Département</h3>
-              <p className="mt-1">{declaration.department}</p>
+              <p className="mt-1">{declaration.departmentName}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>
@@ -138,42 +138,42 @@ const ViewDeclarationPage = () => {
             <h3 className="text-sm font-medium text-gray-500">Statut de validation</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'submitted' || declaration.status === 'verified' || declaration.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'soumise' || declaration.status === 'verifiee' || declaration.status === 'approuvee' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                   1
                 </div>
                 <div>
                   <p className="text-sm font-medium">Soumission</p>
-                  {declaration.status !== 'draft' && (
+                  {declaration.status !== 'brouillon' && (
                     <p className="text-xs text-gray-500">
-                      {format(parseISO(declaration.updatedAt), 'PPP', { locale: fr })}
+                      {format(parseISO(declaration.updated_at), 'PPP', { locale: fr })}
                     </p>
                   )}
                 </div>
               </div>
               
               <div className="flex items-center space-x-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'verified' || declaration.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'verifiee' || declaration.status === 'approuvee' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                   2
                 </div>
                 <div>
                   <p className="text-sm font-medium">Vérification</p>
-                  {declaration.verifiedBy && (
+                  {declaration.verified_by && (
                     <p className="text-xs text-gray-500">
-                      par {declaration.verifiedBy}
+                      par {declaration.verified_by}
                     </p>
                   )}
                 </div>
               </div>
               
               <div className="flex items-center space-x-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${declaration.status === 'approuvee' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                   3
                 </div>
                 <div>
                   <p className="text-sm font-medium">Approbation</p>
-                  {declaration.approvedBy && (
+                  {declaration.approved_by && (
                     <p className="text-xs text-gray-500">
-                      par {declaration.approvedBy}
+                      par {declaration.approved_by}
                     </p>
                   )}
                 </div>
@@ -181,12 +181,12 @@ const ViewDeclarationPage = () => {
             </div>
           </div>
           
-          {declaration.rejectionReason && (
+          {declaration.rejection_reason && (
             <>
               <Separator className="my-6" />
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <h3 className="text-sm font-medium text-red-800">Motif de rejet</h3>
-                <p className="mt-2 text-sm text-red-700">{declaration.rejectionReason}</p>
+                <p className="mt-2 text-sm text-red-700">{declaration.rejection_reason}</p>
               </div>
             </>
           )}
@@ -198,7 +198,9 @@ const ViewDeclarationPage = () => {
           <h2 className="text-xl font-semibold">Détail des sessions</h2>
         </div>
         <div className="p-6">
-          <DeclarationForm existingDeclaration={declaration} isReadOnly={true} />
+          {/* Note: Temporarily commented out as we need to adapt the DeclarationForm component
+          to work with our Declaration structure */}
+          {/* <DeclarationForm existingDeclaration={declaration} isReadOnly={true} /> */}
         </div>
       </div>
     </div>

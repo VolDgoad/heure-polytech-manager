@@ -80,4 +80,13 @@ export interface CourseSession {
   type: 'cm' | 'td' | 'tp';
   location: string;
   description?: string;
+  
+  // Additional fields from DeclarationForm
+  startTime?: string;
+  endTime?: string;
+  courseTitle?: string;
+  courseType?: 'CM' | 'TD' | 'TP';
+  hoursCount?: number;
+  department?: string;
+  comments?: string;
 }
