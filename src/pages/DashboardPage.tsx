@@ -1,184 +1,61 @@
 
 import { useAuth } from '@/context/AuthContext';
-import { useDeclarations } from '@/context/DeclarationContext';
-import DeclarationCard from '@/components/DeclarationCard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, Clock, FileCheck, FileText } from 'lucide-react';
+import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
+import { PendingDeclarationsTable } from '@/components/dashboard/PendingDeclarationsTable';
+import { DeclarationChart } from '@/components/dashboard/DeclarationChart';
+import { DeclarationProvider } from '@/context/DeclarationContext';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { userDeclarations, pendingDeclarations, declarations } = useDeclarations();
 
   if (!user) return null;
 
-  // Role-specific stats
-  const getStats = () => {
+  const welcomeMessage = () => {
+    const hour = new Date().getHours();
+    let greeting = "Bonjour";
+
+    if (hour < 12) {
+      greeting = "Bonjour";
+    } else if (hour < 18) {
+      greeting = "Bon après-midi";
+    } else {
+      greeting = "Bonsoir";
+    }
+
+    return `${greeting}, ${user.first_name} ${user.last_name}`;
+  };
+
+  const getRoleName = () => {
     switch (user.role) {
-      case 'enseignant':
-        const draft = userDeclarations.filter(d => d.status === 'brouillon').length;
-        const submitted = userDeclarations.filter(d => d.status === 'soumise').length;
-        const verified = userDeclarations.filter(d => d.status === 'verifiee').length;
-        const approved = userDeclarations.filter(d => d.status === 'approuvee').length;
-        
-        const totalHours = userDeclarations
-          .filter(d => d.status === 'approuvee')
-          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
-        
-        return [
-          { title: 'Brouillons', value: draft, icon: FileText, color: 'text-gray-500' },
-          { title: 'En attente', value: submitted + verified, icon: Clock, color: 'text-blue-500' },
-          { title: 'Approuvées', value: approved, icon: CheckCircle, color: 'text-green-500' },
-          { title: 'Heures validées', value: `${totalHours}h`, icon: FileCheck, color: 'text-purple-500' },
-        ];
-      case 'scolarite':
-        const pendingVerification = declarations.filter(d => d.status === 'soumise').length;
-        const totalVerified = declarations.filter(d => d.status === 'verifiee' || d.status === 'approuvee').length;
-        
-        return [
-          { title: 'À vérifier', value: pendingVerification, icon: Clock, color: 'text-blue-500' },
-          { title: 'Vérifiées', value: totalVerified, icon: CheckCircle, color: 'text-green-500' },
-          { title: 'Total déclarations', value: declarations.length, icon: FileText, color: 'text-gray-500' },
-        ];
-      case 'chef_departement':
-        const pendingApproval = declarations.filter(
-          d => d.status === 'verifiee' && d.department_id === user.department_id
-        ).length;
-        
-        const totalApproved = declarations.filter(
-          d => d.status === 'approuvee' && d.department_id === user.department_id
-        ).length;
-        
-        const departmentHours = declarations
-          .filter(d => d.status === 'approuvee' && d.department_id === user.department_id)
-          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
-          
-        return [
-          { title: 'À valider', value: pendingApproval, icon: Clock, color: 'text-blue-500' },
-          { title: 'Validées', value: totalApproved, icon: CheckCircle, color: 'text-green-500' },
-          { title: 'Heures département', value: `${departmentHours}h`, icon: FileCheck, color: 'text-purple-500' },
-        ];
-      case 'directrice_etudes':
-        const waitingDirector = declarations.filter(d => d.status === 'verifiee').length;
-        const finalApproved = declarations.filter(d => d.status === 'approuvee').length;
-        
-        const allHours = declarations
-          .filter(d => d.status === 'approuvee')
-          .reduce((sum, d) => sum + (d.totalHours || 0), 0);
-          
-        return [
-          { title: 'À approuver', value: waitingDirector, icon: Clock, color: 'text-blue-500' },
-          { title: 'Approuvées', value: finalApproved, icon: CheckCircle, color: 'text-green-500' },
-          { title: 'Total heures', value: `${allHours}h`, icon: FileCheck, color: 'text-purple-500' },
-          { title: 'Enseignants', value: new Set(declarations.map(d => d.teacher_id)).size, icon: FileText, color: 'text-gray-500' },
-        ];
+      case "enseignant":
+        return "Enseignant";
+      case "chef_departement":
+        return "Chef de département";
+      case "scolarite":
+        return "Scolarité";
+      case "directrice_etudes":
+        return "Directrice des études";
+      case "admin":
+        return "Administrateur";
       default:
-        return [];
+        return "";
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Tableau de bord</h1>
+      <div>
+        <h1 className="text-2xl font-bold">{welcomeMessage()}</h1>
         <p className="text-muted-foreground">
-          Bienvenue, <span className="font-medium">{`${user.first_name} ${user.last_name}`}</span>
+          {getRoleName()} | {user.department_id ? "Département" : "Polytech Diamniadio"}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {getStats().map((stat, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:max-w-[400px]">
-          <TabsTrigger value="pending">En attente</TabsTrigger>
-          <TabsTrigger value="recent">Récentes</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pending" className="mt-6">
-          {user.role === 'enseignant' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userDeclarations.filter(d => d.status === 'brouillon' || d.status === 'soumise' || d.status === 'verifiee').length > 0 ? (
-                userDeclarations
-                  .filter(d => d.status === 'brouillon' || d.status === 'soumise' || d.status === 'verifiee')
-                  .slice(0, 6)
-                  .map((declaration) => (
-                    <DeclarationCard key={declaration.id} declaration={declaration} />
-                  ))
-              ) : (
-                <div className="col-span-3 text-center py-10">
-                  <p className="text-muted-foreground">Aucune déclaration en attente.</p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {(user.role === 'scolarite' || user.role === 'chef_departement' || user.role === 'directrice_etudes') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingDeclarations.length > 0 ? (
-                pendingDeclarations.slice(0, 6).map((declaration) => (
-                  <DeclarationCard 
-                    key={declaration.id} 
-                    declaration={declaration} 
-                    actions={user.role === 'scolarite' ? 'verify' : 'approve'}
-                  />
-                ))
-              ) : (
-                <div className="col-span-3 text-center py-10">
-                  <p className="text-muted-foreground">Aucune déclaration en attente de traitement.</p>
-                </div>
-              )}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="recent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {user.role === 'enseignant' ? (
-              userDeclarations.length > 0 ? (
-                userDeclarations
-                  .slice(0, 6)
-                  .map((declaration) => (
-                    <DeclarationCard key={declaration.id} declaration={declaration} />
-                  ))
-              ) : (
-                <div className="col-span-3 text-center py-10">
-                  <p className="text-muted-foreground">Aucune déclaration récente.</p>
-                </div>
-              )
-            ) : (
-              declarations.length > 0 ? (
-                declarations
-                  .slice(0, 6)
-                  .map((declaration) => (
-                    <DeclarationCard 
-                      key={declaration.id} 
-                      declaration={declaration} 
-                      actions="view"
-                    />
-                  ))
-              ) : (
-                <div className="col-span-3 text-center py-10">
-                  <p className="text-muted-foreground">Aucune déclaration récente.</p>
-                </div>
-              )
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+      <DeclarationProvider>
+        <StatisticsCards />
+        <PendingDeclarationsTable />
+        <DeclarationChart />
+      </DeclarationProvider>
     </div>
   );
 };
