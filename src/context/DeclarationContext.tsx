@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Declaration, CourseSession, DeclarationStatus } from '@/types';
 import { useAuth } from './AuthContext';
@@ -19,7 +18,6 @@ interface DeclarationContextType {
   loading: boolean;
 }
 
-// Sample initial declarations for demonstration
 const INITIAL_DECLARATIONS: Declaration[] = [
   {
     id: '1',
@@ -79,7 +77,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load declarations from localStorage or use initial data
     const storedDeclarations = localStorage.getItem('polytechDeclarations');
     if (storedDeclarations) {
       setDeclarations(JSON.parse(storedDeclarations));
@@ -90,14 +87,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(false);
   }, []);
 
-  // Save declarations to localStorage whenever they change
   useEffect(() => {
     if (declarations.length > 0) {
       localStorage.setItem('polytechDeclarations', JSON.stringify(declarations));
     }
   }, [declarations]);
 
-  // Filter declarations based on user role
   const userDeclarations = user 
     ? declarations.filter(d => d.teacher_id === user.id)
     : [];
@@ -126,7 +121,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const createDeclaration = (sessions: CourseSession[]) => {
     if (!user) return;
     
-    // Calculate total hours from sessions
     const totalHours = sessions.reduce((total, session) => {
       if (session.hoursCount) {
         return total + session.hoursCount;
@@ -159,7 +153,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const updateDeclaration = (id: string, sessions: CourseSession[]) => {
-    // Calculate total hours from sessions
     const totalHours = sessions.reduce((total, session) => {
       if (session.hoursCount) {
         return total + session.hoursCount;
@@ -187,16 +180,14 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const declaration = declarations.find(d => d.id === id);
     if (!declaration) return;
 
-    // Check if the submitter is a department head and is submitting for their own department
-    const isChefSubmittingForOwnDept = 
-      user.role === 'chef_departement' && 
+    const isChefSubmittingForOwnDept =
+      user.role === 'chef_departement' &&
       declaration.department_id === user.department_id;
 
     if (isChefSubmittingForOwnDept) {
-      // Auto-validate if chef is submitting for own department
-      setDeclarations(prev => 
-        prev.map(d => 
-          d.id === id 
+      setDeclarations(prev =>
+        prev.map(d =>
+          d.id === id
             ? {
                 ...d,
                 status: 'validee' as DeclarationStatus,
@@ -207,16 +198,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
             : d
         )
       );
-      
       toast.success('Déclaration soumise et automatiquement validée');
-      
-      // Notify directrice_etudes that a declaration is waiting for final approval
-      toast.info('La directrice des études a été notifiée pour l\'approbation finale');
+      toast.info('La directrice des études a été notifiée pour approbation finale');
     } else {
-      // Regular submission process - notify scolarite for verification
-      setDeclarations(prev => 
-        prev.map(d => 
-          d.id === id 
+      setDeclarations(prev =>
+        prev.map(d =>
+          d.id === id
             ? {
                 ...d,
                 status: 'soumise' as DeclarationStatus,
@@ -232,15 +219,14 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const verifyDeclaration = (id: string, verify: boolean, reason?: string) => {
     if (!user || user.role !== 'scolarite') return;
-    
+
     const declaration = declarations.find(d => d.id === id);
     if (!declaration) return;
-    
+
     if (verify) {
-      // If verified, update status and notify teacher and department head
-      setDeclarations(prev => 
-        prev.map(d => 
-          d.id === id 
+      setDeclarations(prev =>
+        prev.map(d =>
+          d.id === id
             ? {
                 ...d,
                 status: 'verifiee' as DeclarationStatus,
@@ -251,15 +237,13 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
             : d
         )
       );
-      
       toast.success('Déclaration vérifiée avec succès');
       toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
-      toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
+      toast.info(`Le chef du département concerné a été notifié d'une fiche à valider`);
     } else {
-      // If rejected, update status and notify only the teacher
-      setDeclarations(prev => 
-        prev.map(d => 
-          d.id === id 
+      setDeclarations(prev =>
+        prev.map(d =>
+          d.id === id
             ? {
                 ...d,
                 status: 'rejetee' as DeclarationStatus,
@@ -271,7 +255,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
             : d
         )
       );
-      
       toast.success('Déclaration rejetée');
       toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
     }
@@ -279,61 +262,56 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const approveDeclaration = (id: string, approve: boolean, reason?: string) => {
     if (!user) return;
-    
+
     const declaration = declarations.find(d => d.id === id);
     if (!declaration) return;
-    
-    // For chef_departement: handling validation
+
     if (user.role === 'chef_departement') {
-      if (approve) {
-        setDeclarations(prev => 
-          prev.map(d => 
-            d.id === id 
-              ? {
-                  ...d,
-                  status: 'validee' as DeclarationStatus,
-                  updated_at: new Date().toISOString(),
-                  validated_by: user.id,
-                  validated_at: new Date().toISOString(),
-                }
-              : d
-          )
-        );
-        
-        toast.success('Déclaration validée avec succès');
-        toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
-        toast.info('La directrice des études a été notifiée pour approbation finale');
-      } else {
-        setDeclarations(prev => 
-          prev.map(d => 
-            d.id === id 
-              ? {
-                  ...d,
-                  status: 'rejetee' as DeclarationStatus,
-                  updated_at: new Date().toISOString(),
-                  rejected_by: user.id,
-                  rejected_at: new Date().toISOString(),
-                  rejection_reason: reason,
-                }
-              : d
-          )
-        );
-        
-        toast.success('Déclaration rejetée');
-        toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+      if (declaration.department_id === user.department_id) {
+        if (approve) {
+          setDeclarations(prev =>
+            prev.map(d =>
+              d.id === id
+                ? {
+                    ...d,
+                    status: 'validee' as DeclarationStatus,
+                    updated_at: new Date().toISOString(),
+                    validated_by: user.id,
+                    validated_at: new Date().toISOString(),
+                  }
+                : d
+            )
+          );
+          toast.success('Déclaration validée avec succès');
+          toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
+          toast.info('La directrice des études a été notifiée pour approbation finale');
+        } else {
+          setDeclarations(prev =>
+            prev.map(d =>
+              d.id === id
+                ? {
+                    ...d,
+                    status: 'rejetee' as DeclarationStatus,
+                    updated_at: new Date().toISOString(),
+                    rejected_by: user.id,
+                    rejected_at: new Date().toISOString(),
+                    rejection_reason: reason,
+                  }
+                : d
+            )
+          );
+          toast.success('Déclaration rejetée');
+          toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+        }
       }
     }
-    
-    // For directrice_etudes: handling final approval
+
     if (user.role === 'directrice_etudes') {
-      // Check if the directrice is approving her own submission
-      const isDirectriceApprovingOwn = declaration.teacher_id === user.id;
-      
-      if (isDirectriceApprovingOwn) {
-        // Auto-approve if directrice is approving her own submission that's been validated
-        setDeclarations(prev => 
-          prev.map(d => 
-            d.id === id 
+      const isDirectriceSubmission = declaration.teacher_id === user.id;
+      if (isDirectriceSubmission && declaration.status === 'validee') {
+        setDeclarations(prev =>
+          prev.map(d =>
+            d.id === id
               ? {
                   ...d,
                   status: 'approuvee' as DeclarationStatus,
@@ -344,15 +322,13 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
               : d
           )
         );
-        
         toast.success('Déclaration approuvée automatiquement');
-        toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
-        toast.info('Deux rapports ont été générés automatiquement');
+        toast.info('Le chef de département a été notifié');
+        toast.info('Deux rapports générés automatiquement');
       } else if (approve) {
-        // Regular approval process
-        setDeclarations(prev => 
-          prev.map(d => 
-            d.id === id 
+        setDeclarations(prev =>
+          prev.map(d =>
+            d.id === id
               ? {
                   ...d,
                   status: 'approuvee' as DeclarationStatus,
@@ -363,16 +339,14 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
               : d
           )
         );
-        
         toast.success('Déclaration approuvée avec succès');
         toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
-        toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
-        toast.info('Deux rapports ont été générés automatiquement');
+        toast.info('Le chef de département a été notifié');
+        toast.info('Deux rapports générés automatiquement');
       } else {
-        // Rejection process
-        setDeclarations(prev => 
-          prev.map(d => 
-            d.id === id 
+        setDeclarations(prev =>
+          prev.map(d =>
+            d.id === id
               ? {
                   ...d,
                   status: 'rejetee' as DeclarationStatus,
@@ -384,10 +358,9 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
               : d
           )
         );
-        
         toast.success('Déclaration rejetée');
         toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
-        toast.info(`Le chef du département ${declaration.departmentName} a été notifié du rejet`);
+        toast.info('Le chef de département a été notifié du rejet');
       }
     }
   };

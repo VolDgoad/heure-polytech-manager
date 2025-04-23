@@ -90,7 +90,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
           declaration_date: new Date(existingDeclaration.declaration_date),
         }
       : {
-          department_id: user?.department_id || '',
+          department_id: '',
           program_id: '',
           level_id: '',
           semester_id: '',
@@ -262,7 +262,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    disabled={isReadOnly || (user?.role !== 'admin' && user?.role !== 'directrice_etudes')}
+                    disabled={isReadOnly}
                   >
                     <FormControl>
                       <SelectTrigger>
