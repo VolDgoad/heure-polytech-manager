@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Declaration, CourseSession, DeclarationStatus } from '@/types';
 import { useAuth } from './AuthContext';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DeclarationContextType {
   declarations: Declaration[];
@@ -113,8 +114,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
             );
           case 'directrice_etudes':
             return declarations.filter(d => 
-              d.status === 'verifiee' || 
-              (d.status === 'approuvee' && d.approved_by !== 'Dr. Aïssatou Ba')
+              d.status === 'validee' || 
+              (d.status === 'approuvee' && d.approved_by !== user.id)
             );
           default:
             return [];
@@ -181,68 +182,214 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const submitDeclaration = (id: string) => {
-    setDeclarations(prev => 
-      prev.map(declaration => 
-        declaration.id === id 
-          ? {
-              ...declaration,
-              status: 'soumise' as DeclarationStatus,
-              updated_at: new Date().toISOString(),
-            }
-          : declaration
-      )
-    );
-    toast.success('Déclaration soumise avec succès');
+    if (!user) return;
+
+    const declaration = declarations.find(d => d.id === id);
+    if (!declaration) return;
+
+    // Check if the submitter is a department head and is submitting for their own department
+    const isChefSubmittingForOwnDept = 
+      user.role === 'chef_departement' && 
+      declaration.department_id === user.department_id;
+
+    if (isChefSubmittingForOwnDept) {
+      // Auto-validate if chef is submitting for own department
+      setDeclarations(prev => 
+        prev.map(d => 
+          d.id === id 
+            ? {
+                ...d,
+                status: 'validee' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+                validated_by: user.id,
+                validated_at: new Date().toISOString(),
+              }
+            : d
+        )
+      );
+      
+      toast.success('Déclaration soumise et automatiquement validée');
+      
+      // Notify directrice_etudes that a declaration is waiting for final approval
+      toast.info('La directrice des études a été notifiée pour l\'approbation finale');
+    } else {
+      // Regular submission process - notify scolarite for verification
+      setDeclarations(prev => 
+        prev.map(d => 
+          d.id === id 
+            ? {
+                ...d,
+                status: 'soumise' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+              }
+            : d
+        )
+      );
+      toast.success('Déclaration soumise avec succès');
+      toast.info('La scolarité a été notifiée pour vérification');
+    }
   };
 
   const verifyDeclaration = (id: string, verify: boolean, reason?: string) => {
-    if (!user) return;
+    if (!user || user.role !== 'scolarite') return;
     
-    const userName = `${user.first_name} ${user.last_name}`;
+    const declaration = declarations.find(d => d.id === id);
+    if (!declaration) return;
     
-    setDeclarations(prev => 
-      prev.map(declaration => 
-        declaration.id === id 
-          ? {
-              ...declaration,
-              status: verify ? 'verifiee' as DeclarationStatus : 'rejetee' as DeclarationStatus,
-              updated_at: new Date().toISOString(),
-              verified_by: verify ? user.id : undefined,
-              verified_at: verify ? new Date().toISOString() : undefined,
-              rejection_reason: verify ? undefined : reason,
-            }
-          : declaration
-      )
-    );
-    
-    toast.success(verify 
-      ? 'Déclaration vérifiée avec succès' 
-      : 'Déclaration rejetée');
+    if (verify) {
+      // If verified, update status and notify teacher and department head
+      setDeclarations(prev => 
+        prev.map(d => 
+          d.id === id 
+            ? {
+                ...d,
+                status: 'verifiee' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+                verified_by: user.id,
+                verified_at: new Date().toISOString(),
+              }
+            : d
+        )
+      );
+      
+      toast.success('Déclaration vérifiée avec succès');
+      toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
+      toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
+    } else {
+      // If rejected, update status and notify only the teacher
+      setDeclarations(prev => 
+        prev.map(d => 
+          d.id === id 
+            ? {
+                ...d,
+                status: 'rejetee' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+                rejected_by: user.id,
+                rejected_at: new Date().toISOString(),
+                rejection_reason: reason,
+              }
+            : d
+        )
+      );
+      
+      toast.success('Déclaration rejetée');
+      toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+    }
   };
 
   const approveDeclaration = (id: string, approve: boolean, reason?: string) => {
     if (!user) return;
     
-    const userName = `${user.first_name} ${user.last_name}`;
+    const declaration = declarations.find(d => d.id === id);
+    if (!declaration) return;
     
-    setDeclarations(prev => 
-      prev.map(declaration => 
-        declaration.id === id 
-          ? {
-              ...declaration,
-              status: approve ? 'approuvee' as DeclarationStatus : 'rejetee' as DeclarationStatus,
-              updated_at: new Date().toISOString(),
-              approved_by: approve ? user.id : undefined,
-              approved_at: approve ? new Date().toISOString() : undefined,
-              rejection_reason: approve ? undefined : reason,
-            }
-          : declaration
-      )
-    );
+    // For chef_departement: handling validation
+    if (user.role === 'chef_departement') {
+      if (approve) {
+        setDeclarations(prev => 
+          prev.map(d => 
+            d.id === id 
+              ? {
+                  ...d,
+                  status: 'validee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  validated_by: user.id,
+                  validated_at: new Date().toISOString(),
+                }
+              : d
+          )
+        );
+        
+        toast.success('Déclaration validée avec succès');
+        toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
+        toast.info('La directrice des études a été notifiée pour approbation finale');
+      } else {
+        setDeclarations(prev => 
+          prev.map(d => 
+            d.id === id 
+              ? {
+                  ...d,
+                  status: 'rejetee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  rejected_by: user.id,
+                  rejected_at: new Date().toISOString(),
+                  rejection_reason: reason,
+                }
+              : d
+          )
+        );
+        
+        toast.success('Déclaration rejetée');
+        toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+      }
+    }
     
-    toast.success(approve 
-      ? 'Déclaration approuvée avec succès' 
-      : 'Déclaration rejetée');
+    // For directrice_etudes: handling final approval
+    if (user.role === 'directrice_etudes') {
+      // Check if the directrice is approving her own submission
+      const isDirectriceApprovingOwn = declaration.teacher_id === user.id;
+      
+      if (isDirectriceApprovingOwn) {
+        // Auto-approve if directrice is approving her own submission that's been validated
+        setDeclarations(prev => 
+          prev.map(d => 
+            d.id === id 
+              ? {
+                  ...d,
+                  status: 'approuvee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  approved_by: user.id,
+                  approved_at: new Date().toISOString(),
+                }
+              : d
+          )
+        );
+        
+        toast.success('Déclaration approuvée automatiquement');
+        toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
+        toast.info('Deux rapports ont été générés automatiquement');
+      } else if (approve) {
+        // Regular approval process
+        setDeclarations(prev => 
+          prev.map(d => 
+            d.id === id 
+              ? {
+                  ...d,
+                  status: 'approuvee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  approved_by: user.id,
+                  approved_at: new Date().toISOString(),
+                }
+              : d
+          )
+        );
+        
+        toast.success('Déclaration approuvée avec succès');
+        toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
+        toast.info(`Le chef du département ${declaration.departmentName} a été notifié`);
+        toast.info('Deux rapports ont été générés automatiquement');
+      } else {
+        // Rejection process
+        setDeclarations(prev => 
+          prev.map(d => 
+            d.id === id 
+              ? {
+                  ...d,
+                  status: 'rejetee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  rejected_by: user.id,
+                  rejected_at: new Date().toISOString(),
+                  rejection_reason: reason,
+                }
+              : d
+          )
+        );
+        
+        toast.success('Déclaration rejetée');
+        toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+        toast.info(`Le chef du département ${declaration.departmentName} a été notifié du rejet`);
+      }
+    }
   };
 
   const deleteDeclaration = (id: string) => {

@@ -23,7 +23,7 @@ const ValidationPage = () => {
             );
           case 'directrice_etudes':
             return declarations.filter(d => 
-              d.status === 'verifiee'
+              d.status === 'validee'
             );
           default:
             return [];
@@ -42,11 +42,13 @@ const ValidationPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Validation des Déclarations</h1>
+        <h1 className="text-2xl font-bold">
+          {user?.role === 'directrice_etudes' ? 'Approbation' : 'Validation'} des Déclarations
+        </h1>
         <p className="text-muted-foreground">
           {user?.role === 'chef_departement' 
             ? `Validez les déclarations du département ${user.department_id}`
-            : 'Approuvez les déclarations vérifiées par les chefs de département'
+            : 'Approuvez les déclarations validées par les chefs de département'
           }
         </p>
       </div>
@@ -75,11 +77,13 @@ const ValidationPage = () => {
       ) : (
         <div className="flex flex-col items-center justify-center py-10 space-y-4">
           <FileText className="h-20 w-20 text-gray-300" />
-          <h3 className="text-xl font-semibold">Aucune déclaration à valider</h3>
+          <h3 className="text-xl font-semibold">
+            Aucune déclaration à {user?.role === 'directrice_etudes' ? 'approuver' : 'valider'}
+          </h3>
           <p className="text-muted-foreground text-center max-w-md">
             {searchTerm 
               ? "Aucune déclaration ne correspond à votre recherche. Essayez d'autres termes."
-              : "Toutes les déclarations ont été validées. Revenez plus tard."
+              : `Toutes les déclarations ont été ${user?.role === 'directrice_etudes' ? 'approuvées' : 'validées'}. Revenez plus tard.`
             }
           </p>
         </div>

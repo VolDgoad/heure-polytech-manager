@@ -23,17 +23,25 @@ const ValidationDetailsPage = () => {
   
   const declaration = getDeclarationById(id || '');
   
-  if (!declaration || declaration.status !== 'verifiee') {
+  // For chef_departement, they should see declarations with status 'verifiee'
+  // For directrice_etudes, they should see declarations with status 'validee'
+  const isValidStatus = user?.role === 'chef_departement' 
+    ? declaration?.status === 'verifiee'
+    : declaration?.status === 'validee';
+  
+  if (!declaration || !isValidStatus) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
           <FileText className="h-4 w-4" />
           <AlertTitle>Déclaration introuvable</AlertTitle>
           <AlertDescription>
-            La déclaration que vous essayez de valider n'existe pas, n'est pas en attente de validation, ou vous n'avez pas les droits pour la valider.
+            La déclaration que vous essayez de {user?.role === 'directrice_etudes' ? 'approuver' : 'valider'} n'existe pas, 
+            n'est pas en attente de {user?.role === 'directrice_etudes' ? 'approbation' : 'validation'}, 
+            ou vous n'avez pas les droits pour la {user?.role === 'directrice_etudes' ? 'approuver' : 'valider'}.
             <div className="mt-4">
               <Button onClick={() => navigate('/validation')}>
-                Retour aux validations
+                Retour aux {user?.role === 'directrice_etudes' ? 'approbations' : 'validations'}
               </Button>
             </div>
           </AlertDescription>
@@ -78,11 +86,14 @@ const ValidationDetailsPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            Validation
+            {user?.role === 'directrice_etudes' ? 'Approbation' : 'Validation'}
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
-            Vérifiée le {format(parseISO(declaration.updated_at), 'PPP', { locale: fr })}
+            {declaration.status === 'verifiee' && 
+              `Vérifiée le ${format(parseISO(declaration.verified_at || declaration.updated_at), 'PPP', { locale: fr })}`}
+            {declaration.status === 'validee' && 
+              `Validée le ${format(parseISO(declaration.validated_at || declaration.updated_at), 'PPP', { locale: fr })}`}
           </p>
         </div>
         
@@ -111,10 +122,18 @@ const ValidationDetailsPage = () => {
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>
               <p className="mt-1 font-bold">{declaration.totalHours} heures</p>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Vérifiée par</h3>
-              <p className="mt-1">{declaration.verified_by}</p>
-            </div>
+            {declaration.verified_by && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Vérifiée par</h3>
+                <p className="mt-1">{declaration.verified_by}</p>
+              </div>
+            )}
+            {declaration.validated_by && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Validée par</h3>
+                <p className="mt-1">{declaration.validated_by}</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
