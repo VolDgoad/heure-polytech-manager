@@ -46,6 +46,7 @@ export interface Declaration {
   departmentName?: string;
   teacherName?: string;
   totalHours?: number;
+  course_element_name?: string;
 }
 
 export interface User {

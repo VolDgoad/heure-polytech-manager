@@ -26,7 +26,12 @@ const EditDeclarationPage = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('declarations')
-          .select('*')
+          .select(`
+            *,
+            teacher:teacher_id(first_name, last_name),
+            department:department_id(name),
+            course_element:course_element_id(name)
+          `)
           .eq('id', id)
           .single();
           
@@ -44,7 +49,16 @@ const EditDeclarationPage = () => {
           return;
         }
         
-        setDeclaration(data);
+        // Process declaration data
+        const processedDeclaration: Declaration = {
+          ...data,
+          teacherName: `${data.teacher.first_name} ${data.teacher.last_name}`,
+          departmentName: data.department.name,
+          course_element_name: data.course_element.name,
+          totalHours: (data.cm_hours || 0) + (data.td_hours || 0) + (data.tp_hours || 0)
+        };
+        
+        setDeclaration(processedDeclaration);
       } catch (err: any) {
         console.error('Error fetching declaration:', err);
         setError(err.message || 'Une erreur est survenue lors du chargement de la déclaration');
