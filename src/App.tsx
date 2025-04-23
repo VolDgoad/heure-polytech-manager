@@ -22,6 +22,11 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
 import RegisterPage from "./pages/RegisterPage";
 import DepartmentsPage from "./pages/admin/DepartmentsPage";
+import ProgramsPage from "./pages/admin/ProgramsPage";
+import LevelsPage from "./pages/admin/LevelsPage";
+import SemestersPage from "./pages/admin/SemestersPage";
+import TeachingUnitsPage from "./pages/admin/TeachingUnitsPage";
+import CourseElementsPage from "./pages/admin/CourseElementsPage";
 import UsersPage from "./pages/admin/UsersPage";
 import Index from "./pages/Index";
 
@@ -136,6 +141,51 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
                     <DepartmentsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="admin/programs" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <ProgramsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="admin/levels" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <LevelsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="admin/semesters" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <SemestersPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="admin/teaching-units" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <TeachingUnitsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="admin/course-elements" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'directrice_etudes']}>
+                    <CourseElementsPage />
                   </ProtectedRoute>
                 } 
               />
