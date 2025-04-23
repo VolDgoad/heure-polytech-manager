@@ -105,7 +105,10 @@ const LevelsPage = () => {
     mutationFn: async (values: FormValues) => {
       const { data, error } = await supabase
         .from("levels")
-        .insert([values])
+        .insert([{
+          name: values.name,
+          program_id: values.program_id
+        }])
         .select();
       if (error) throw error;
       return data;
@@ -127,7 +130,10 @@ const LevelsPage = () => {
       const { id, ...levelData } = values;
       const { data, error } = await supabase
         .from("levels")
-        .update(levelData)
+        .update({
+          name: levelData.name,
+          program_id: levelData.program_id
+        })
         .eq("id", id)
         .select();
       if (error) throw error;

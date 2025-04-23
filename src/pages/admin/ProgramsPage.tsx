@@ -116,7 +116,10 @@ const ProgramsPage = () => {
     mutationFn: async (values: FormValues) => {
       const { data, error } = await supabase
         .from("programs")
-        .insert([values])
+        .insert([{
+          name: values.name,
+          department_id: values.department_id
+        }])
         .select();
       if (error) throw error;
       return data;
@@ -138,7 +141,10 @@ const ProgramsPage = () => {
       const { id, ...programData } = values;
       const { data, error } = await supabase
         .from("programs")
-        .update(programData)
+        .update({
+          name: programData.name,
+          department_id: programData.department_id
+        })
         .eq("id", id)
         .select();
       if (error) throw error;
