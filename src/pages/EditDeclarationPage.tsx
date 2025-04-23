@@ -28,7 +28,7 @@ const EditDeclarationPage = () => {
           .from('declarations')
           .select(`
             *,
-            teacher:teacher_id(first_name, last_name),
+            profiles!declarations_teacher_id_fkey(first_name, last_name),
             department:department_id(name),
             course_element:course_element_id(name)
           `)
@@ -52,7 +52,7 @@ const EditDeclarationPage = () => {
         // Process declaration data
         const processedDeclaration: Declaration = {
           ...data,
-          teacherName: `${data.teacher.first_name} ${data.teacher.last_name}`,
+          teacherName: `${data.profiles.first_name} ${data.profiles.last_name}`,
           departmentName: data.department.name,
           course_element_name: data.course_element.name,
           totalHours: (data.cm_hours || 0) + (data.td_hours || 0) + (data.tp_hours || 0)
