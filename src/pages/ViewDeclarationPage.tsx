@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Declaration } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DeclarationStatusBadge } from '@/components/DeclarationStatusBadge';
+import DeclarationStatusBadge from '@/components/DeclarationStatusBadge';
 
 const ViewDeclarationPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -152,7 +151,6 @@ const ViewDeclarationPage = () => {
             </div>
           </div>
           
-          {/* Afficher les détails du processus de validation si la déclaration a été soumise */}
           {declaration.status !== 'brouillon' && (
             <div className="mt-6 pt-6 border-t">
               <h3 className="text-lg font-medium mb-4">Processus de validation</h3>
