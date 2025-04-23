@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -114,6 +113,17 @@ const ProgramsPage = () => {
 
   const createProgramMutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', sessionData.session?.user.id)
+        .maybeSingle();
+      console.log("[DEBUG] Attempting create program as:", {
+        user: sessionData.session?.user,
+        profile: userProfile,
+      });
+
       const { data, error } = await supabase
         .from("programs")
         .insert([{
@@ -121,6 +131,7 @@ const ProgramsPage = () => {
           department_id: values.department_id
         }])
         .select();
+
       if (error) throw error;
       return data;
     },
@@ -130,14 +141,31 @@ const ProgramsPage = () => {
       resetForm();
       toast.success("Filière créée avec succès");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error creating program:", error);
-      toast.error("Erreur lors de la création de la filière");
+      if (error.code === "42501" || error.message?.includes("row violates row-level security")) {
+        toast.error("Vous n'avez pas les permissions nécessaires pour créer une filière. Contactez un administrateur.");
+      } else if (error.status === 403) {
+        toast.error("Action interdite : vous n'avez pas les droits requis.");
+      } else {
+        toast.error("Erreur lors de la création de la filière");
+      }
     },
   });
 
   const updateProgramMutation = useMutation({
     mutationFn: async (values: FormValues & { id: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', sessionData.session?.user.id)
+        .maybeSingle();
+      console.log("[DEBUG] Attempting update program as:", {
+        user: sessionData.session?.user,
+        profile: userProfile,
+      });
+
       const { id, ...programData } = values;
       const { data, error } = await supabase
         .from("programs")
@@ -156,14 +184,31 @@ const ProgramsPage = () => {
       resetForm();
       toast.success("Filière mise à jour avec succès");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error updating program:", error);
-      toast.error("Erreur lors de la mise à jour de la filière");
+      if (error.code === "42501" || error.message?.includes("row violates row-level security")) {
+        toast.error("Vous n'avez pas les permissions nécessaires pour modifier cette filière.");
+      } else if (error.status === 403) {
+        toast.error("Action interdite : vous n'avez pas les droits requis.");
+      } else {
+        toast.error("Erreur lors de la mise à jour de la filière");
+      }
     },
   });
 
   const deleteProgramMutation = useMutation({
     mutationFn: async (id: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', sessionData.session?.user.id)
+        .maybeSingle();
+      console.log("[DEBUG] Attempting delete program as:", {
+        user: sessionData.session?.user,
+        profile: userProfile,
+      });
+
       const { error } = await supabase.from("programs").delete().eq("id", id);
       if (error) throw error;
     },
@@ -172,9 +217,15 @@ const ProgramsPage = () => {
       setDeletingProgram(null);
       toast.success("Filière supprimée avec succès");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error deleting program:", error);
-      toast.error("Erreur lors de la suppression de la filière");
+      if (error.code === "42501" || error.message?.includes("row violates row-level security")) {
+        toast.error("Vous n'avez pas les permissions nécessaires pour supprimer cette filière.");
+      } else if (error.status === 403) {
+        toast.error("Action interdite : vous n'avez pas les droits requis.");
+      } else {
+        toast.error("Erreur lors de la suppression de la filière");
+      }
     },
   });
 
