@@ -23,8 +23,38 @@ export const PendingDeclarationsTable = () => {
     console.log("PendingDeclarationsTable - User:", user?.role);
     console.log("PendingDeclarationsTable - pendingDeclarations:", pendingDeclarations);
     
-    setDisplayDeclarations(pendingDeclarations);
-  }, [user, pendingDeclarations]);
+    // Make sure we're actually getting the proper pending declarations
+    if (pendingDeclarations && pendingDeclarations.length > 0) {
+      setDisplayDeclarations(pendingDeclarations);
+    } else {
+      // Fallback to filtering declarations based on user role directly
+      if (user) {
+        let filtered: Declaration[] = [];
+        
+        switch(user.role) {
+          case 'scolarite':
+            filtered = declarations.filter(d => d.status === 'soumise');
+            console.log("Filtering scolarite declarations:", filtered);
+            break;
+          case 'chef_departement':
+            filtered = declarations.filter(
+              d => d.status === 'verifiee' && 
+              d.department_id === user.department_id
+            );
+            console.log("Filtering chef departement declarations:", filtered);
+            break;
+          case 'directrice_etudes':
+            filtered = declarations.filter(d => d.status === 'validee');
+            console.log("Filtering directrice declarations:", filtered);
+            break;
+          default:
+            filtered = [];
+        }
+        
+        setDisplayDeclarations(filtered);
+      }
+    }
+  }, [user, pendingDeclarations, declarations]);
 
   if (!user) return null;
 
@@ -88,7 +118,9 @@ export const PendingDeclarationsTable = () => {
               {displayDeclarations.slice(0, 5).map((declaration) => (
                 <TableRow key={declaration.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">
-                    {format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr })}
+                    {declaration.declaration_date ? 
+                      format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr }) : 
+                      'N/A'}
                   </TableCell>
                   <TableCell>{declaration.teacherName || declaration.teacher_id}</TableCell>
                   <TableCell>{declaration.departmentName || declaration.department_id}</TableCell>

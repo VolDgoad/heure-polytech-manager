@@ -78,7 +78,7 @@ const ValidationPage = () => {
       (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const validateAction = user?.role === 'chef_departement' ? 'approve' : 'verify';
+  const validateAction = user?.role === 'chef_departement' ? 'approve' : 'approve';
   
   if (!user || (user.role !== 'chef_departement' && user.role !== 'directrice_etudes')) {
     return null;
@@ -101,6 +101,8 @@ const ValidationPage = () => {
     }
     return "Aucune fiche en attente.";
   };
+  
+  console.log("ValidationPage - rendering with filtered pending:", filteredPending);
   
   return (
     <div className="space-y-6">
