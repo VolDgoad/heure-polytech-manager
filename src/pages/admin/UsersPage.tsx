@@ -30,9 +30,14 @@ import { toast } from '@/components/ui/sonner';
 import { UserCog, Lock, UserPlus } from 'lucide-react';
 import UserForm, { UserFormData } from '@/components/admin/UserForm';
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
+
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [departments, setDepartments] = useState<{id: string, name: string}[]>([]);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -136,6 +141,7 @@ const UsersPage = () => {
 
   const handleCreateUser = async (userData: UserFormData) => {
     try {
+      setIsSubmitting(true);
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
         email_confirm: true,
@@ -163,6 +169,8 @@ const UsersPage = () => {
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(`Erreur lors de la création: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

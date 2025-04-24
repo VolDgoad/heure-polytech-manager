@@ -5,11 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeacherGrade, UserRole } from '@/types';
-import { Department } from '@/types';
+
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
 
 interface UserFormProps {
   onSubmit: (data: UserFormData) => void;
-  departments: Department[];
+  departments: DepartmentOption[];
   isSubmitting: boolean;
 }
 
