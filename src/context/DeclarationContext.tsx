@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Declaration, CourseSession, DeclarationStatus } from '@/types';
 import { useAuth } from './AuthContext';
@@ -141,7 +142,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       td_hours: 0,
       tp_hours: 0,
       declaration_date: new Date().toISOString().split('T')[0],
-      status: 'brouillon',
+      status: 'soumise', // Changed from 'brouillon' to 'soumise'
       payment_status: 'non_paye',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -149,7 +150,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
     
     setDeclarations(prev => [newDeclaration, ...prev]);
-    toast.success('Déclaration créée avec succès');
+    toast.success('Déclaration créée et soumise à vérification');
+    toast.info('La scolarité a été notifiée pour vérification');
   };
 
   const updateDeclaration = (id: string, sessions: CourseSession[]) => {

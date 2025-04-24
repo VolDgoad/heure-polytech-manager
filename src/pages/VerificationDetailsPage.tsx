@@ -7,10 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, FileText, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import DeclarationForm from '@/components/DeclarationForm';
 import DeclarationStatusBadge from '@/components/DeclarationStatusBadge';
 import { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 const VerificationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,11 +79,11 @@ const VerificationDetailsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500">Enseignant</h3>
-              <p className="mt-1">{declaration.teacher_id}</p>
+              <p className="mt-1">{declaration.teacherName}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Département</h3>
-              <p className="mt-1">{declaration.department_id}</p>
+              <p className="mt-1">{declaration.departmentName}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>
@@ -93,13 +93,77 @@ const VerificationDetailsPage = () => {
         </CardContent>
       </Card>
       
+      <Card className="border-gray-200">
+        <CardHeader className="bg-gray-50 border-b border-gray-200">
+          <CardTitle className="text-lg">Détail des heures</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Cours Magistraux (CM)</h3>
+              <p className="mt-1">{declaration.cm_hours} heures</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Travaux Dirigés (TD)</h3>
+              <p className="mt-1">{declaration.td_hours} heures</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Travaux Pratiques (TP)</h3>
+              <p className="mt-1">{declaration.tp_hours} heures</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <div className="bg-white border border-gray-200 rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">Détail des sessions</h2>
+          <h2 className="text-xl font-semibold">Suivi du processus de validation</h2>
         </div>
         <div className="p-6">
-          {/* We need to update this form to handle our declaration structure */}
-          {/* <DeclarationForm existingDeclaration={declaration} isReadOnly={true} /> */}
+          <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+            <div className="flex flex-col items-center">
+              <Badge className="bg-blue-500 mb-2">Étape 1</Badge>
+              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="mt-2 font-medium text-center">Soumission</h3>
+              <p className="text-green-600 font-medium text-sm mt-1">Complété</p>
+              <p className="text-xs text-gray-500 mt-1">{format(parseISO(declaration.created_at), 'dd/MM/yyyy', { locale: fr })}</p>
+            </div>
+            <div className="hidden md:block mt-10 flex-grow h-0.5 bg-gray-300"></div>
+            
+            <div className="flex flex-col items-center">
+              <Badge className="bg-yellow-500 mb-2">Étape 2</Badge>
+              <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-yellow-600" />
+              </div>
+              <h3 className="mt-2 font-medium text-center">Vérification</h3>
+              <p className="text-yellow-600 font-medium text-sm mt-1">En cours</p>
+              <p className="text-xs text-gray-500 mt-1">Scolarité</p>
+            </div>
+            <div className="hidden md:block mt-10 flex-grow h-0.5 bg-gray-300"></div>
+            
+            <div className="flex flex-col items-center">
+              <Badge className="bg-gray-500 mb-2">Étape 3</Badge>
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center opacity-60">
+                <CheckCircle className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mt-2 font-medium text-center">Validation</h3>
+              <p className="text-gray-500 font-medium text-sm mt-1">En attente</p>
+              <p className="text-xs text-gray-500 mt-1">Chef de Département</p>
+            </div>
+            <div className="hidden md:block mt-10 flex-grow h-0.5 bg-gray-300"></div>
+            
+            <div className="flex flex-col items-center">
+              <Badge className="bg-gray-500 mb-2">Étape 4</Badge>
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center opacity-60">
+                <CheckCircle className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mt-2 font-medium text-center">Approbation</h3>
+              <p className="text-gray-500 font-medium text-sm mt-1">En attente</p>
+              <p className="text-xs text-gray-500 mt-1">Directrice</p>
+            </div>
+          </div>
         </div>
       </div>
       

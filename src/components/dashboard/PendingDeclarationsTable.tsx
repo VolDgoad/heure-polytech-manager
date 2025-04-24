@@ -44,13 +44,12 @@ export const PendingDeclarationsTable = () => {
   };
 
   return (
-    <div className="space-y-4 mt-6">
-      <h2 className="text-xl font-semibold">{getPageTitle()}</h2>
+    <div className="p-4">
       {pendingDeclarations.length > 0 ? (
-        <div className="rounded-md border">
+        <div className="rounded-md overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-gray-50">
                 <TableHead>Date</TableHead>
                 <TableHead>Enseignant</TableHead>
                 <TableHead>Département</TableHead>
@@ -62,7 +61,7 @@ export const PendingDeclarationsTable = () => {
             </TableHeader>
             <TableBody>
               {pendingDeclarations.slice(0, 5).map((declaration) => (
-                <TableRow key={declaration.id}>
+                <TableRow key={declaration.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">
                     {format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr })}
                   </TableCell>
@@ -78,6 +77,7 @@ export const PendingDeclarationsTable = () => {
                       variant="ghost" 
                       size="sm" 
                       onClick={() => navigate(getActionRoute(declaration))}
+                      className="hover:bg-blue-50"
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       Voir
@@ -89,12 +89,12 @@ export const PendingDeclarationsTable = () => {
           </Table>
         </div>
       ) : (
-        <div className="text-center py-6 border rounded-md bg-gray-50">
+        <div className="text-center py-10 border rounded-md bg-gray-50">
           <p className="text-muted-foreground">Aucune déclaration en attente pour le moment.</p>
         </div>
       )}
       {pendingDeclarations.length > 5 && (
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-4">
           <Button 
             variant="outline" 
             size="sm"
@@ -112,6 +112,7 @@ export const PendingDeclarationsTable = () => {
                   break;
               }
             }}
+            className="hover:bg-blue-50"
           >
             Voir toutes les déclarations
           </Button>
