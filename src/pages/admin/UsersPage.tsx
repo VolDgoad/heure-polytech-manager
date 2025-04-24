@@ -42,7 +42,7 @@ const UsersPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole>('enseignant');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('none');
   const [passwordResetDialog, setPasswordResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,7 +94,7 @@ const UsersPage = () => {
   const openEditDialog = (user: User) => {
     setCurrentUser(user);
     setSelectedRole(user.role);
-    setSelectedDepartment(user.department_id || '');
+    setSelectedDepartment(user.department_id || 'none');
     setDialogOpen(true);
   };
 
@@ -112,7 +112,7 @@ const UsersPage = () => {
         .from('profiles')
         .update({
           role: selectedRole,
-          department_id: selectedDepartment || null,
+          department_id: selectedDepartment === 'none' ? null : selectedDepartment,
         })
         .eq('id', currentUser.id);
       
@@ -315,7 +315,7 @@ const UsersPage = () => {
                     <SelectValue placeholder="Sélectionner un département" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun département</SelectItem>
+                    <SelectItem value="none">Aucun département</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}

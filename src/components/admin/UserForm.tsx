@@ -115,14 +115,14 @@ const UserForm = ({ onSubmit, departments, isSubmitting }: UserFormProps) => {
       <div>
         <Label htmlFor="department">Département</Label>
         <Select
-          value={formData.department_id}
-          onValueChange={(value) => setFormData({ ...formData, department_id: value })}
+          value={formData.department_id || "none"}
+          onValueChange={(value) => setFormData({ ...formData, department_id: value === "none" ? undefined : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un département" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Aucun département</SelectItem>
+            <SelectItem value="none">Aucun département</SelectItem>
             {departments.map((dept) => (
               <SelectItem key={dept.id} value={dept.id}>
                 {dept.name}
@@ -136,13 +136,14 @@ const UserForm = ({ onSubmit, departments, isSubmitting }: UserFormProps) => {
         <div>
           <Label htmlFor="grade">Grade</Label>
           <Select
-            value={formData.grade}
-            onValueChange={(value: TeacherGrade) => setFormData({ ...formData, grade: value })}
+            value={formData.grade || "none"}
+            onValueChange={(value) => setFormData({ ...formData, grade: value === "none" ? undefined : value as TeacherGrade })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un grade" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">Aucun grade</SelectItem>
               {grades.map((grade) => (
                 <SelectItem key={grade} value={grade}>
                   {grade}
