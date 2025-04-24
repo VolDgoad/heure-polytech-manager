@@ -19,6 +19,7 @@ interface UserFormProps {
 
 export interface UserFormData {
   email: string;
+  password: string;
   first_name: string;
   last_name: string;
   role: UserRole;
@@ -29,6 +30,7 @@ export interface UserFormData {
 const UserForm = ({ onSubmit, departments, isSubmitting }: UserFormProps) => {
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
+    password: '',
     first_name: '',
     last_name: '',
     role: 'enseignant',
@@ -70,6 +72,17 @@ const UserForm = ({ onSubmit, departments, isSubmitting }: UserFormProps) => {
           required
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="password">Mot de Passe</Label>
+        <Input
+          id="password"
+          type="password"
+          required
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
         />
       </div>
 

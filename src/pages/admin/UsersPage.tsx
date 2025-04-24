@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,17 +143,26 @@ const UsersPage = () => {
   const handleCreateUser = async (userData: UserFormData) => {
     try {
       setIsSubmitting(true);
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      
+      // First sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: userData.email,
-        email_confirm: true,
-        user_metadata: {
-          first_name: userData.first_name,
-          last_name: userData.last_name,
+        password: userData.password,
+        options: {
+          data: {
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+          }
         }
       });
 
-      if (authError) throw authError;
+      if (signUpError) throw signUpError;
+      
+      if (!authData.user) {
+        throw new Error("Échec de la création de l'utilisateur");
+      }
 
+      // Then update their profile with the role and other details
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
