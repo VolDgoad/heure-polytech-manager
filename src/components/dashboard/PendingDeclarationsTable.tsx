@@ -1,4 +1,3 @@
-
 import { useDeclarations } from "@/context/DeclarationContext";
 import { useAuth } from "@/context/AuthContext";
 import { Declaration } from "@/types";
@@ -21,43 +20,17 @@ export const PendingDeclarationsTable = () => {
 
   useEffect(() => {
     console.log("PendingDeclarationsTable - User:", user?.role);
-    console.log("PendingDeclarationsTable - declarations:", declarations);
     console.log("PendingDeclarationsTable - pendingDeclarations:", pendingDeclarations);
     
-    // Make sure we're actually getting the proper pending declarations
+    // Use the pendingDeclarations from context
     if (pendingDeclarations && pendingDeclarations.length > 0) {
       console.log("Setting display declarations from pendingDeclarations:", pendingDeclarations);
       setDisplayDeclarations(pendingDeclarations);
     } else {
-      // Fallback to filtering declarations based on user role directly
-      if (user) {
-        let filtered: Declaration[] = [];
-        
-        switch(user.role) {
-          case 'scolarite':
-            filtered = declarations.filter(d => d.status === 'soumise');
-            console.log("Filtering scolarite declarations:", filtered);
-            break;
-          case 'chef_departement':
-            filtered = declarations.filter(
-              d => d.status === 'verifiee' && 
-              d.department_id === user.department_id
-            );
-            console.log("Filtering chef departement declarations:", filtered);
-            break;
-          case 'directrice_etudes':
-            filtered = declarations.filter(d => d.status === 'validee');
-            console.log("Filtering directrice declarations:", filtered);
-            break;
-          default:
-            filtered = [];
-        }
-        
-        console.log("Setting display declarations from filtered:", filtered);
-        setDisplayDeclarations(filtered);
-      }
+      console.log("No pending declarations found in context");
+      setDisplayDeclarations([]);
     }
-  }, [user, pendingDeclarations, declarations]);
+  }, [user, pendingDeclarations]);
 
   if (!user) return null;
 

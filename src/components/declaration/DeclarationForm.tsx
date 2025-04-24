@@ -228,8 +228,11 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
 
   const handleSubmitDeclaration = () => {
     if (existingDeclaration && existingDeclaration.id) {
+      console.log("Submitting declaration with ID:", existingDeclaration.id);
       submitDeclaration(existingDeclaration.id);
       navigate('/declarations');
+    } else {
+      console.error("Cannot submit declaration: missing ID");
     }
   };
 

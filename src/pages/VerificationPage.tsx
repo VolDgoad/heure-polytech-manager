@@ -13,11 +13,10 @@ import DeclarationCard from '@/components/DeclarationCard';
 
 const VerificationPage = () => {
   const { user } = useAuth();
-  const { declarations } = useDeclarations();
+  const { declarations, pendingDeclarations } = useDeclarations();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
   const [verifiedDeclarations, setVerifiedDeclarations] = useState<Declaration[]>([]);
   
   useEffect(() => {
@@ -26,26 +25,22 @@ const VerificationPage = () => {
       return;
     }
     
-    // Explicitly filter the declarations for the scolarité user
+    // Filter declarations for verified ones by this user
     if (user) {
-      // Pending declarations are those with status 'soumise'
-      const pending = declarations.filter(d => d.status === 'soumise');
-      
-      // Verified declarations are those that have been verified or rejected by this user
       const verified = declarations.filter(d => 
         (d.status === 'verifiee' || d.status === 'rejetee') && 
         d.verified_by === user.id
       );
       
-      setPendingDeclarations(pending);
       setVerifiedDeclarations(verified);
       
-      console.log("Pending declarations for verification:", pending);
-      console.log("Verified declarations:", verified);
+      console.log("VerificationPage - User:", user.role);
+      console.log("VerificationPage - pendingDeclarations from context:", pendingDeclarations);
+      console.log("VerificationPage - verified declarations:", verified);
     }
     
     setLoading(false);
-  }, [user, navigate, declarations]);
+  }, [user, navigate, declarations, pendingDeclarations]);
   
   // Filter declarations based on search
   const filteredPending = pendingDeclarations.filter(
@@ -66,7 +61,7 @@ const VerificationPage = () => {
     return null;
   }
   
-  console.log("Rendering VerificationPage with filtered pending:", filteredPending);
+  console.log("VerificationPage - Rendering with filtered pending:", filteredPending.length);
   
   return (
     <div className="space-y-6">
