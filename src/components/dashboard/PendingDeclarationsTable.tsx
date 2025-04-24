@@ -9,6 +9,8 @@ import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { Eye } from "lucide-react";
 import DeclarationStatusBadge from "@/components/DeclarationStatusBadge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const PendingDeclarationsTable = () => {
   const { user } = useAuth();
@@ -43,6 +45,20 @@ export const PendingDeclarationsTable = () => {
     }
   };
 
+  if (pendingDeclarations.length === 0) {
+    return (
+      <Card className="border shadow-sm">
+        <CardContent className="p-6">
+          <Alert variant="default" className="bg-blue-50 border-blue-100 text-blue-800">
+            <AlertDescription>
+              Aucune déclaration en attente pour le moment.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="p-4">
       {pendingDeclarations.length > 0 ? (
@@ -65,8 +81,8 @@ export const PendingDeclarationsTable = () => {
                   <TableCell className="font-medium">
                     {format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr })}
                   </TableCell>
-                  <TableCell>{declaration.teacherName}</TableCell>
-                  <TableCell>{declaration.departmentName}</TableCell>
+                  <TableCell>{declaration.teacherName || declaration.teacher_id}</TableCell>
+                  <TableCell>{declaration.departmentName || declaration.department_id}</TableCell>
                   <TableCell>{declaration.course_element_id}</TableCell>
                   <TableCell>{declaration.totalHours}h</TableCell>
                   <TableCell>

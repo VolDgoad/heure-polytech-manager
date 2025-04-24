@@ -10,7 +10,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import DeclarationCard from '@/components/DeclarationCard';
-import { supabase } from '@/integrations/supabase/client';
 
 const ValidationPage = () => {
   const { user } = useAuth();
@@ -24,97 +23,60 @@ const ValidationPage = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Initialize declarations based on role
-    const fetchDeclarations = async () => {
-      try {
-        setLoading(true);
-        
-        let pendingQuery;
-        let validatedQuery;
-        
-        if (user.role === 'chef_departement' && user.department_id) {
-          // Chef département: declarations vérifiées dans son département
-          pendingQuery = supabase
-            .from('declarations')
-            .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-            .eq('status', 'verifiee')
-            .eq('department_id', user.department_id);
-            
-          validatedQuery = supabase
-            .from('declarations')
-            .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-            .in('status', ['validee', 'approuvee', 'rejetee'])
-            .eq('department_id', user.department_id)
-            .eq('validated_by', user.id);
-            
-        } else if (user.role === 'directrice_etudes') {
-          // Directrice des études: toutes declarations validées
-          pendingQuery = supabase
-            .from('declarations')
-            .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-            .eq('status', 'validee');
-            
-          validatedQuery = supabase
-            .from('declarations')
-            .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-            .in('status', ['approuvee', 'rejetee'])
-            .eq('approved_by', user.id);
-        } else {
-          setPendingDeclarations([]);
-          setValidatedDeclarations([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Execute queries
-        const [pendingResult, validatedResult] = await Promise.all([
-          pendingQuery,
-          validatedQuery
-        ]);
-        
-        // Process pending declarations
-        if (pendingResult.error) throw pendingResult.error;
-        const pending = pendingResult.data.map((declaration: any) => ({
-          ...declaration,
-          teacherName: `${declaration.profiles?.first_name || ''} ${declaration.profiles?.last_name || ''}`,
-          departmentName: declaration.departments?.name || '',
-          totalHours: (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0)
-        }));
-        
-        // Process validated declarations
-        if (validatedResult.error) throw validatedResult.error;
-        const validated = validatedResult.data.map((declaration: any) => ({
-          ...declaration,
-          teacherName: `${declaration.profiles?.first_name || ''} ${declaration.profiles?.last_name || ''}`,
-          departmentName: declaration.departments?.name || '',
-          totalHours: (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0)
-        }));
-        
-        setPendingDeclarations(pending);
-        setValidatedDeclarations(validated);
-      } catch (error) {
-        console.error('Error fetching declarations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
     
-    fetchDeclarations();
+    try {
+      // Filter declarations directly from the context
+      let pending: Declaration[] = [];
+      let validated: Declaration[] = [];
+      
+      if (user.role === 'chef_departement' && user.department_id) {
+        // Chef département: declarations vérifiées dans son département
+        pending = declarations.filter(d => 
+          d.status === 'verifiee' && 
+          d.department_id === user.department_id
+        );
+        
+        validated = declarations.filter(d => 
+          (d.status === 'validee' || d.status === 'approuvee' || d.status === 'rejetee') && 
+          d.department_id === user.department_id &&
+          d.validated_by === user.id
+        );
+      } else if (user.role === 'directrice_etudes') {
+        // Directrice des études: toutes declarations validées
+        pending = declarations.filter(d => d.status === 'validee');
+        
+        validated = declarations.filter(d => 
+          (d.status === 'approuvee' || d.status === 'rejetee') && 
+          d.approved_by === user.id
+        );
+      }
+      
+      console.log("Pending declarations:", pending);
+      console.log("Validated declarations:", validated);
+      
+      setPendingDeclarations(pending);
+      setValidatedDeclarations(validated);
+    } catch (error) {
+      console.error('Error filtering declarations:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user, declarations]);
 
   // Filter declarations based on search
   const filteredPending = pendingDeclarations.filter(
     (declaration) => 
-      declaration.teacherName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.departmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.course_element_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      (declaration.teacherName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const filteredValidated = validatedDeclarations.filter(
     (declaration) => 
-      declaration.teacherName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.departmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.course_element_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      (declaration.teacherName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const validateAction = user?.role === 'chef_departement' ? 'approve' : 'verify';

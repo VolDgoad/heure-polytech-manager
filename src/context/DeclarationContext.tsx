@@ -100,19 +100,24 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const pendingDeclarations = user 
     ? (() => {
+        console.log("Determining pending declarations for user role:", user.role);
         switch(user.role) {
           case 'scolarite':
             return declarations.filter(d => d.status === 'soumise');
           case 'chef_departement':
-            return declarations.filter(
+            const deptDeclarations = declarations.filter(
               d => d.status === 'verifiee' && 
               d.department_id === user.department_id
             );
+            console.log("Chef departement pending declarations:", deptDeclarations);
+            return deptDeclarations;
           case 'directrice_etudes':
-            return declarations.filter(d => 
+            const dirDeclarations = declarations.filter(d => 
               d.status === 'validee' || 
               (d.status === 'approuvee' && d.approved_by !== user.id)
             );
+            console.log("Directrice etudes pending declarations:", dirDeclarations);
+            return dirDeclarations;
           default:
             return [];
         }
@@ -142,7 +147,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       td_hours: 0,
       tp_hours: 0,
       declaration_date: new Date().toISOString().split('T')[0],
-      status: 'soumise', // Changed from 'brouillon' to 'soumise'
+      // Directement soumise (non brouillon)
+      status: 'soumise',
       payment_status: 'non_paye',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -265,12 +271,18 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const approveDeclaration = (id: string, approve: boolean, reason?: string) => {
     if (!user) return;
 
+    console.log("Approving declaration:", id, "approve:", approve, "user role:", user.role);
+    
     const declaration = declarations.find(d => d.id === id);
-    if (!declaration) return;
+    if (!declaration) {
+      console.error("Declaration not found:", id);
+      return;
+    }
 
     if (user.role === 'chef_departement') {
       if (declaration.department_id === user.department_id) {
         if (approve) {
+          console.log("Chef department approving");
           setDeclarations(prev =>
             prev.map(d =>
               d.id === id
@@ -288,6 +300,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
           toast.info('La directrice des études a été notifiée pour approbation finale');
         } else {
+          console.log("Chef department rejecting");
           setDeclarations(prev =>
             prev.map(d =>
               d.id === id
@@ -305,12 +318,15 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           toast.success('Déclaration rejetée');
           toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
         }
+      } else {
+        console.error("Chef department doesn't have permission for this department");
       }
     }
 
     if (user.role === 'directrice_etudes') {
       const isDirectriceSubmission = declaration.teacher_id === user.id;
       if (isDirectriceSubmission && declaration.status === 'validee') {
+        console.log("Directrice auto-approving own submission");
         setDeclarations(prev =>
           prev.map(d =>
             d.id === id
@@ -328,6 +344,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         toast.info('Le chef de département a été notifié');
         toast.info('Deux rapports générés automatiquement');
       } else if (approve) {
+        console.log("Directrice approving");
         setDeclarations(prev =>
           prev.map(d =>
             d.id === id
@@ -346,6 +363,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         toast.info('Le chef de département a été notifié');
         toast.info('Deux rapports générés automatiquement');
       } else {
+        console.log("Directrice rejecting");
         setDeclarations(prev =>
           prev.map(d =>
             d.id === id
@@ -373,7 +391,9 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const getDeclarationById = (id: string) => {
-    return declarations.find(declaration => declaration.id === id);
+    const declaration = declarations.find(declaration => declaration.id === id);
+    console.log("getDeclarationById:", id, "found:", !!declaration);
+    return declaration;
   };
 
   return (
