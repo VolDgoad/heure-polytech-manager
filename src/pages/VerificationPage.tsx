@@ -13,10 +13,11 @@ import DeclarationCard from '@/components/DeclarationCard';
 
 const VerificationPage = () => {
   const { user } = useAuth();
-  const { declarations, pendingDeclarations } = useDeclarations();
+  const { declarations } = useDeclarations();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
   const [verifiedDeclarations, setVerifiedDeclarations] = useState<Declaration[]>([]);
   
   useEffect(() => {
@@ -25,20 +26,26 @@ const VerificationPage = () => {
       return;
     }
     
-    // Filter verified declarations from context
+    // Explicitly filter the declarations for the scolarité user
     if (user) {
+      // Pending declarations are those with status 'soumise'
+      const pending = declarations.filter(d => d.status === 'soumise');
+      
+      // Verified declarations are those that have been verified or rejected by this user
       const verified = declarations.filter(d => 
         (d.status === 'verifiee' || d.status === 'rejetee') && 
         d.verified_by === user.id
       );
       
+      setPendingDeclarations(pending);
       setVerifiedDeclarations(verified);
-      console.log("Pending declarations for verification:", pendingDeclarations);
+      
+      console.log("Pending declarations for verification:", pending);
       console.log("Verified declarations:", verified);
     }
     
     setLoading(false);
-  }, [user, navigate, declarations, pendingDeclarations]);
+  }, [user, navigate, declarations]);
   
   // Filter declarations based on search
   const filteredPending = pendingDeclarations.filter(

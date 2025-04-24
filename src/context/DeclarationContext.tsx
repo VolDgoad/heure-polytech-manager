@@ -195,6 +195,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
     
+    if (declaration.status !== 'brouillon') {
+      console.error("Declaration already submitted:", id);
+      toast.error('Déclaration déjà soumise');
+      return;
+    }
+    
     const updatedDeclarations = declarations.map(d =>
       d.id === id
         ? {
@@ -220,6 +226,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!declaration) {
       console.error("Declaration not found for verification:", id);
       toast.error('Déclaration introuvable');
+      return;
+    }
+
+    if (declaration.status !== 'soumise') {
+      console.error("Declaration not in 'soumise' status:", declaration.status);
+      toast.error(`Déclaration non soumise (statut: ${declaration.status})`);
       return;
     }
 
@@ -276,6 +288,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     if (user.role === 'chef_departement') {
       if (declaration.department_id === user.department_id) {
+        if (declaration.status !== 'verifiee') {
+          console.error("Declaration not in 'verifiee' status:", declaration.status);
+          toast.error(`Déclaration non vérifiée (statut: ${declaration.status})`);
+          return;
+        }
+        
         if (approve) {
           console.log("Chef department validating");
           const updatedDeclarations = declarations.map(d =>
@@ -319,6 +337,12 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     if (user.role === 'directrice_etudes') {
+      if (declaration.status !== 'validee') {
+        console.error("Declaration not in 'validee' status:", declaration.status);
+        toast.error(`Déclaration non validée (statut: ${declaration.status})`);
+        return;
+      }
+      
       if (approve) {
         console.log("Directrice approving");
         const updatedDeclarations = declarations.map(d =>

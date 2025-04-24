@@ -21,10 +21,12 @@ export const PendingDeclarationsTable = () => {
 
   useEffect(() => {
     console.log("PendingDeclarationsTable - User:", user?.role);
+    console.log("PendingDeclarationsTable - declarations:", declarations);
     console.log("PendingDeclarationsTable - pendingDeclarations:", pendingDeclarations);
     
     // Make sure we're actually getting the proper pending declarations
     if (pendingDeclarations && pendingDeclarations.length > 0) {
+      console.log("Setting display declarations from pendingDeclarations:", pendingDeclarations);
       setDisplayDeclarations(pendingDeclarations);
     } else {
       // Fallback to filtering declarations based on user role directly
@@ -51,6 +53,7 @@ export const PendingDeclarationsTable = () => {
             filtered = [];
         }
         
+        console.log("Setting display declarations from filtered:", filtered);
         setDisplayDeclarations(filtered);
       }
     }
