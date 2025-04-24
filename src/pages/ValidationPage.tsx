@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useDeclarations } from '@/context/DeclarationContext';
 import { Declaration } from '@/types';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,56 +12,56 @@ import DeclarationCard from '@/components/DeclarationCard';
 
 const ValidationPage = () => {
   const { user } = useAuth();
-  const { declarations } = useDeclarations();
+  const { declarations, pendingDeclarations } = useDeclarations();
   const navigate = useNavigate();
-  const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
   const [validatedDeclarations, setValidatedDeclarations] = useState<Declaration[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (user.role !== 'chef_departement' && user.role !== 'directrice_etudes') {
+      navigate('/unauthorized');
+      return;
+    }
     
     setLoading(true);
     
     try {
-      // Filter declarations directly from the context
-      let pending: Declaration[] = [];
+      // Filter validated declarations based on user role
       let validated: Declaration[] = [];
       
       if (user.role === 'chef_departement' && user.department_id) {
-        // Chef département: declarations vérifiées dans son département
-        pending = declarations.filter(d => 
-          d.status === 'verifiee' && 
-          d.department_id === user.department_id
-        );
-        
         validated = declarations.filter(d => 
           (d.status === 'validee' || d.status === 'approuvee' || d.status === 'rejetee') && 
           d.department_id === user.department_id &&
           d.validated_by === user.id
         );
-      } else if (user.role === 'directrice_etudes') {
-        // Directrice des études: toutes declarations validées
-        pending = declarations.filter(d => d.status === 'validee');
         
+        console.log("Chef département - validated declarations:", validated);
+        console.log("Chef département - pending declarations:", pendingDeclarations);
+        
+      } else if (user.role === 'directrice_etudes') {
         validated = declarations.filter(d => 
           (d.status === 'approuvee' || d.status === 'rejetee') && 
           d.approved_by === user.id
         );
+        
+        console.log("Directrice études - validated declarations:", validated);
+        console.log("Directrice études - pending declarations:", pendingDeclarations);
       }
       
-      console.log("Pending declarations:", pending);
-      console.log("Validated declarations:", validated);
-      
-      setPendingDeclarations(pending);
       setValidatedDeclarations(validated);
     } catch (error) {
       console.error('Error filtering declarations:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, declarations]);
+  }, [user, declarations, pendingDeclarations, navigate]);
 
   // Filter declarations based on search
   const filteredPending = pendingDeclarations.filter(
@@ -82,7 +81,6 @@ const ValidationPage = () => {
   const validateAction = user?.role === 'chef_departement' ? 'approve' : 'verify';
   
   if (!user || (user.role !== 'chef_departement' && user.role !== 'directrice_etudes')) {
-    navigate('/unauthorized');
     return null;
   }
   

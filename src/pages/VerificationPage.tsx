@@ -10,15 +10,14 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import DeclarationCard from '@/components/DeclarationCard';
-import { supabase } from '@/integrations/supabase/client';
 
 const VerificationPage = () => {
   const { user } = useAuth();
+  const { declarations, pendingDeclarations } = useDeclarations();
   const navigate = useNavigate();
-  const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
-  const [verifiedDeclarations, setVerifiedDeclarations] = useState<Declaration[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [verifiedDeclarations, setVerifiedDeclarations] = useState<Declaration[]>([]);
   
   useEffect(() => {
     if (!user || user.role !== 'scolarite') {
@@ -26,73 +25,41 @@ const VerificationPage = () => {
       return;
     }
     
-    const fetchDeclarations = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch declarations pending verification
-        const { data: pendingData, error: pendingError } = await supabase
-          .from('declarations')
-          .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-          .eq('status', 'soumise');
-          
-        if (pendingError) throw pendingError;
-        
-        // Fetch verified declarations
-        const { data: verifiedData, error: verifiedError } = await supabase
-          .from('declarations')
-          .select('*, profiles!teacher_id(first_name, last_name), departments!inner(*)')
-          .in('status', ['verifiee', 'rejetee'])
-          .eq('verified_by', user.id);
-          
-        if (verifiedError) throw verifiedError;
-        
-        // Process pending declarations
-        const pending = pendingData.map((declaration: any) => ({
-          ...declaration,
-          teacherName: `${declaration.profiles?.first_name || ''} ${declaration.profiles?.last_name || ''}`,
-          departmentName: declaration.departments?.name || '',
-          totalHours: (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0)
-        }));
-        
-        // Process verified declarations
-        const verified = verifiedData.map((declaration: any) => ({
-          ...declaration,
-          teacherName: `${declaration.profiles?.first_name || ''} ${declaration.profiles?.last_name || ''}`,
-          departmentName: declaration.departments?.name || '',
-          totalHours: (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0)
-        }));
-        
-        setPendingDeclarations(pending);
-        setVerifiedDeclarations(verified);
-      } catch (error) {
-        console.error('Error fetching declarations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Filter verified declarations from context
+    if (user) {
+      const verified = declarations.filter(d => 
+        (d.status === 'verifiee' || d.status === 'rejetee') && 
+        d.verified_by === user.id
+      );
+      
+      setVerifiedDeclarations(verified);
+      console.log("Pending declarations for verification:", pendingDeclarations);
+      console.log("Verified declarations:", verified);
+    }
     
-    fetchDeclarations();
-  }, [user, navigate]);
+    setLoading(false);
+  }, [user, navigate, declarations, pendingDeclarations]);
   
   // Filter declarations based on search
   const filteredPending = pendingDeclarations.filter(
     (declaration) => 
-      declaration.teacherName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.departmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.course_element_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      (declaration.teacherName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const filteredVerified = verifiedDeclarations.filter(
     (declaration) => 
-      declaration.teacherName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.departmentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      declaration.course_element_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      (declaration.teacherName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   if (!user || user.role !== 'scolarite') {
     return null;
   }
+  
+  console.log("Rendering VerificationPage with filtered pending:", filteredPending);
   
   return (
     <div className="space-y-6">

@@ -17,20 +17,25 @@ import { toast } from '@/components/ui/sonner';
 const ValidationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { getDeclarationById, approveDeclaration, declarations } = useDeclarations();
+  const { declarations, approveDeclaration, getDeclarationById } = useDeclarations();
   const navigate = useNavigate();
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [declaration, setDeclaration] = useState(getDeclarationById(id || ''));
+  const [declaration, setDeclaration] = useState<any>(null);
   
   useEffect(() => {
-    const foundDeclaration = getDeclarationById(id || '');
-    if (foundDeclaration) {
-      console.log("Declaration found:", foundDeclaration);
-      setDeclaration(foundDeclaration);
-    } else {
-      console.log("Declaration not found for ID:", id);
+    if (!id) {
+      console.error("No declaration ID provided");
+      return;
     }
+    
+    console.log("Looking for declaration with ID:", id);
+    console.log("All declarations:", declarations);
+    
+    const foundDeclaration = getDeclarationById(id);
+    console.log("Found declaration:", foundDeclaration);
+    
+    setDeclaration(foundDeclaration);
   }, [id, declarations, getDeclarationById]);
   
   // Determine if the status is valid for the current user role
@@ -38,21 +43,27 @@ const ValidationDetailsPage = () => {
     if (!user || !declaration) return false;
     
     if (user.role === 'chef_departement') {
+      console.log("Chef département checking status:", declaration.status === 'verifiee');
       return declaration.status === 'verifiee';
     } else if (user.role === 'directrice_etudes') {
+      console.log("Directrice études checking status:", declaration.status === 'validee');
       return declaration.status === 'validee';
     }
     return false;
   };
   
   const isValidStatus = determineValidStatus();
+  console.log("Is valid status for user role:", isValidStatus);
   
   // Check department permissions for chef_departement
   const hasPermission = () => {
     if (!user || !declaration) return false;
     
     if (user.role === 'chef_departement') {
-      return declaration.department_id === user.department_id;
+      const hasDeptPermission = declaration.department_id === user.department_id;
+      console.log("Department permission check:", hasDeptPermission, 
+        "declaration dept:", declaration.department_id, "user dept:", user.department_id);
+      return hasDeptPermission;
     }
     
     return true; // directrice_etudes has permission for all departments

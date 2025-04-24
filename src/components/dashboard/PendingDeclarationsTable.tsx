@@ -11,11 +11,20 @@ import { Eye } from "lucide-react";
 import DeclarationStatusBadge from "@/components/DeclarationStatusBadge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 
 export const PendingDeclarationsTable = () => {
   const { user } = useAuth();
-  const { pendingDeclarations } = useDeclarations();
+  const { declarations, pendingDeclarations } = useDeclarations();
   const navigate = useNavigate();
+  const [displayDeclarations, setDisplayDeclarations] = useState<Declaration[]>([]);
+
+  useEffect(() => {
+    console.log("PendingDeclarationsTable - User:", user?.role);
+    console.log("PendingDeclarationsTable - pendingDeclarations:", pendingDeclarations);
+    
+    setDisplayDeclarations(pendingDeclarations);
+  }, [user, pendingDeclarations]);
 
   if (!user) return null;
 
@@ -45,7 +54,7 @@ export const PendingDeclarationsTable = () => {
     }
   };
 
-  if (pendingDeclarations.length === 0) {
+  if (displayDeclarations.length === 0) {
     return (
       <Card className="border shadow-sm">
         <CardContent className="p-6">
@@ -61,7 +70,7 @@ export const PendingDeclarationsTable = () => {
 
   return (
     <div className="p-4">
-      {pendingDeclarations.length > 0 ? (
+      {displayDeclarations.length > 0 ? (
         <div className="rounded-md overflow-hidden">
           <Table>
             <TableHeader>
@@ -76,7 +85,7 @@ export const PendingDeclarationsTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pendingDeclarations.slice(0, 5).map((declaration) => (
+              {displayDeclarations.slice(0, 5).map((declaration) => (
                 <TableRow key={declaration.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">
                     {format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr })}
@@ -109,7 +118,7 @@ export const PendingDeclarationsTable = () => {
           <p className="text-muted-foreground">Aucune déclaration en attente pour le moment.</p>
         </div>
       )}
-      {pendingDeclarations.length > 5 && (
+      {displayDeclarations.length > 5 && (
         <div className="flex justify-end mt-4">
           <Button 
             variant="outline" 

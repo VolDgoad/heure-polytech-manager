@@ -8,20 +8,39 @@ import { CheckCircle, FileText, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import DeclarationStatusBadge from '@/components/DeclarationStatusBadge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/sonner';
 
 const VerificationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { getDeclarationById, verifyDeclaration } = useDeclarations();
+  const { declarations, getDeclarationById, verifyDeclaration } = useDeclarations();
   const navigate = useNavigate();
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [declaration, setDeclaration] = useState(getDeclarationById(id || ''));
   
-  const declaration = getDeclarationById(id || '');
+  useEffect(() => {
+    if (!id) {
+      console.error("No declaration ID provided");
+      return;
+    }
+    
+    console.log("Looking for declaration with ID:", id);
+    const foundDeclaration = getDeclarationById(id);
+    console.log("Found declaration:", foundDeclaration);
+    
+    setDeclaration(foundDeclaration);
+  }, [id, declarations, getDeclarationById]);
   
-  if (!declaration || declaration.status !== 'soumise') {
+  useEffect(() => {
+    if (declaration && declaration.status !== 'soumise') {
+      console.warn("Declaration status is not 'soumise':", declaration.status);
+    }
+  }, [declaration]);
+  
+  if (!declaration) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
@@ -40,15 +59,47 @@ const VerificationDetailsPage = () => {
     );
   }
 
+  if (declaration.status !== 'soumise') {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Alert variant="destructive" className="max-w-md">
+          <FileText className="h-4 w-4" />
+          <AlertTitle>Vérification impossible</AlertTitle>
+          <AlertDescription>
+            Cette déclaration n'est pas en attente de vérification. Son statut actuel est : {declaration.status}.
+            <div className="mt-4">
+              <Button onClick={() => navigate('/verification')}>
+                Retour aux vérifications
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const handleVerify = () => {
-    verifyDeclaration(declaration.id, true);
-    navigate('/verification');
+    try {
+      verifyDeclaration(declaration.id, true);
+      toast.success('Déclaration vérifiée avec succès');
+      navigate('/verification');
+    } catch (error) {
+      console.error("Error verifying declaration:", error);
+      toast.error('Une erreur est survenue lors de la vérification');
+    }
   };
   
   const handleReject = () => {
     if (!rejectionReason) return;
-    verifyDeclaration(declaration.id, false, rejectionReason);
-    navigate('/verification');
+    
+    try {
+      verifyDeclaration(declaration.id, false, rejectionReason);
+      toast.success('Déclaration rejetée');
+      navigate('/verification');
+    } catch (error) {
+      console.error("Error rejecting declaration:", error);
+      toast.error('Une erreur est survenue lors du rejet');
+    }
   };
   
   return (
@@ -83,7 +134,7 @@ const VerificationDetailsPage = () => {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Département</h3>
-              <p className="mt-1">{declaration.departmentName}</p>
+              <p className="mt-1">{declaration.departmentName || declaration.department_id}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Heures totales</h3>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Declaration, CourseSession, DeclarationStatus } from '@/types';
 import { useAuth } from './AuthContext';
@@ -10,7 +11,6 @@ interface DeclarationContextType {
   pendingDeclarations: Declaration[];
   createDeclaration: (sessions: CourseSession[]) => void;
   updateDeclaration: (id: string, sessions: CourseSession[]) => void;
-  submitDeclaration: (id: string) => void;
   verifyDeclaration: (id: string, verify: boolean, reason?: string) => void;
   approveDeclaration: (id: string, approve: boolean, reason?: string) => void;
   deleteDeclaration: (id: string) => void;
@@ -63,7 +63,6 @@ const DeclarationContext = createContext<DeclarationContextType>({
   pendingDeclarations: [],
   createDeclaration: () => {},
   updateDeclaration: () => {},
-  submitDeclaration: () => {},
   verifyDeclaration: () => {},
   approveDeclaration: () => {},
   deleteDeclaration: () => {},
@@ -76,6 +75,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load declarations from localStorage or initialize with default data
   useEffect(() => {
     const storedDeclarations = localStorage.getItem('polytechDeclarations');
     if (storedDeclarations) {
@@ -87,9 +87,11 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(false);
   }, []);
 
+  // Update localStorage whenever declarations change
   useEffect(() => {
     if (declarations.length > 0) {
       localStorage.setItem('polytechDeclarations', JSON.stringify(declarations));
+      console.log("Updated declarations in localStorage:", declarations);
     }
   }, [declarations]);
 
@@ -100,6 +102,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const pendingDeclarations = user 
     ? (() => {
         console.log("Determining pending declarations for user role:", user.role);
+        console.log("Current declarations:", declarations);
+        
         switch(user.role) {
           case 'scolarite':
             const scolariteDeclarations = declarations.filter(d => d.status === 'soumise');
@@ -155,6 +159,8 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setDeclarations(prev => [newDeclaration, ...prev]);
     toast.success('Déclaration soumise pour vérification');
     toast.info('La scolarité a été notifiée');
+    
+    console.log("Created new declaration:", newDeclaration);
   };
 
   const updateDeclaration = (id: string, sessions: CourseSession[]) => {
@@ -177,46 +183,55 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       )
     );
     toast.success('Déclaration mise à jour');
+    console.log("Updated declaration:", id);
   };
 
   const verifyDeclaration = (id: string, verify: boolean, reason?: string) => {
     if (!user || user.role !== 'scolarite') return;
+    
+    console.log("Verifying declaration:", id, "verify:", verify);
 
     const declaration = declarations.find(d => d.id === id);
-    if (!declaration) return;
+    if (!declaration) {
+      console.error("Declaration not found for verification:", id);
+      toast.error('Déclaration introuvable');
+      return;
+    }
 
     if (verify) {
-      setDeclarations(prev =>
-        prev.map(d =>
-          d.id === id
-            ? {
-                ...d,
-                status: 'verifiee' as DeclarationStatus,
-                updated_at: new Date().toISOString(),
-                verified_by: user.id,
-                verified_at: new Date().toISOString(),
-              }
-            : d
-        )
+      const updatedDeclarations = declarations.map(d =>
+        d.id === id
+          ? {
+              ...d,
+              status: 'verifiee' as DeclarationStatus,
+              updated_at: new Date().toISOString(),
+              verified_by: user.id,
+              verified_at: new Date().toISOString(),
+            }
+          : d
       );
+      
+      console.log("Updated declaration to verified:", id);
+      setDeclarations(updatedDeclarations);
       toast.success('Déclaration vérifiée avec succès');
       toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
       toast.info('Le chef du département concerné a été notifié');
     } else {
-      setDeclarations(prev =>
-        prev.map(d =>
-          d.id === id
-            ? {
-                ...d,
-                status: 'rejetee' as DeclarationStatus,
-                updated_at: new Date().toISOString(),
-                rejected_by: user.id,
-                rejected_at: new Date().toISOString(),
-                rejection_reason: reason,
-              }
-            : d
-        )
+      const updatedDeclarations = declarations.map(d =>
+        d.id === id
+          ? {
+              ...d,
+              status: 'rejetee' as DeclarationStatus,
+              updated_at: new Date().toISOString(),
+              rejected_by: user.id,
+              rejected_at: new Date().toISOString(),
+              rejection_reason: reason,
+            }
+          : d
       );
+      
+      console.log("Updated declaration to rejected:", id);
+      setDeclarations(updatedDeclarations);
       toast.error('Déclaration rejetée');
       toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
     }
@@ -230,6 +245,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const declaration = declarations.find(d => d.id === id);
     if (!declaration) {
       console.error("Declaration not found:", id);
+      toast.error('Déclaration introuvable');
       return;
     }
 
@@ -237,66 +253,24 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (declaration.department_id === user.department_id) {
         if (approve) {
           console.log("Chef department validating");
-          setDeclarations(prev =>
-            prev.map(d =>
-              d.id === id
-                ? {
-                    ...d,
-                    status: 'validee' as DeclarationStatus,
-                    updated_at: new Date().toISOString(),
-                    validated_by: user.id,
-                    validated_at: new Date().toISOString(),
-                  }
-                : d
-            )
+          const updatedDeclarations = declarations.map(d =>
+            d.id === id
+              ? {
+                  ...d,
+                  status: 'validee' as DeclarationStatus,
+                  updated_at: new Date().toISOString(),
+                  validated_by: user.id,
+                  validated_at: new Date().toISOString(),
+                }
+              : d
           );
+          
+          setDeclarations(updatedDeclarations);
           toast.success('Déclaration validée avec succès');
           toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
           toast.info('La directrice des études a été notifiée');
         } else {
-          setDeclarations(prev =>
-            prev.map(d =>
-              d.id === id
-                ? {
-                    ...d,
-                    status: 'rejetee' as DeclarationStatus,
-                    updated_at: new Date().toISOString(),
-                    rejected_by: user.id,
-                    rejected_at: new Date().toISOString(),
-                    rejection_reason: reason,
-                  }
-                : d
-            )
-          );
-          toast.error('Déclaration rejetée');
-          toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
-        }
-      }
-    }
-
-    if (user.role === 'directrice_etudes') {
-      if (approve) {
-        console.log("Directrice approving");
-        setDeclarations(prev =>
-          prev.map(d =>
-            d.id === id
-              ? {
-                  ...d,
-                  status: 'approuvee' as DeclarationStatus,
-                  updated_at: new Date().toISOString(),
-                  approved_by: user.id,
-                  approved_at: new Date().toISOString(),
-                }
-              : d
-          )
-        );
-        toast.success('Déclaration approuvée avec succès');
-        toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
-        toast.info('Le chef de département a été notifié');
-      } else {
-        console.log("Directrice rejecting");
-        setDeclarations(prev =>
-          prev.map(d =>
+          const updatedDeclarations = declarations.map(d =>
             d.id === id
               ? {
                   ...d,
@@ -307,8 +281,53 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
                   rejection_reason: reason,
                 }
               : d
-          )
+          );
+          
+          setDeclarations(updatedDeclarations);
+          toast.error('Déclaration rejetée');
+          toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
+        }
+      } else {
+        console.error("Department mismatch for validation:", declaration.department_id, user.department_id);
+        toast.error('Vous n\'avez pas les droits pour valider cette déclaration');
+      }
+    }
+
+    if (user.role === 'directrice_etudes') {
+      if (approve) {
+        console.log("Directrice approving");
+        const updatedDeclarations = declarations.map(d =>
+          d.id === id
+            ? {
+                ...d,
+                status: 'approuvee' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+                approved_by: user.id,
+                approved_at: new Date().toISOString(),
+              }
+            : d
         );
+        
+        setDeclarations(updatedDeclarations);
+        toast.success('Déclaration approuvée avec succès');
+        toast.info(`L'enseignant ${declaration.teacherName} a été notifié`);
+        toast.info('Le chef de département a été notifié');
+      } else {
+        console.log("Directrice rejecting");
+        const updatedDeclarations = declarations.map(d =>
+          d.id === id
+            ? {
+                ...d,
+                status: 'rejetee' as DeclarationStatus,
+                updated_at: new Date().toISOString(),
+                rejected_by: user.id,
+                rejected_at: new Date().toISOString(),
+                rejection_reason: reason,
+              }
+            : d
+        );
+        
+        setDeclarations(updatedDeclarations);
         toast.error('Déclaration rejetée');
         toast.info(`L'enseignant ${declaration.teacherName} a été notifié du rejet`);
         toast.info('Le chef de département a été notifié du rejet');
@@ -319,10 +338,18 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const deleteDeclaration = (id: string) => {
     setDeclarations(prev => prev.filter(declaration => declaration.id !== id));
     toast.success('Déclaration supprimée');
+    console.log("Deleted declaration:", id);
   };
 
   const getDeclarationById = (id: string) => {
     console.log("Getting declaration by ID:", id);
+    console.log("Available declarations:", declarations);
+    
+    if (!id) {
+      console.error("Invalid ID provided:", id);
+      return undefined;
+    }
+    
     const declaration = declarations.find(d => d.id === id);
     console.log("Found declaration:", declaration);
     return declaration;
@@ -336,7 +363,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         pendingDeclarations,
         createDeclaration,
         updateDeclaration,
-        submitDeclaration: () => {},
         verifyDeclaration,
         approveDeclaration,
         deleteDeclaration,
