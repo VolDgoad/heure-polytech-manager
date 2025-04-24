@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Declaration, CourseSession, DeclarationStatus } from '@/types';
 import { useAuth } from './AuthContext';
@@ -15,6 +14,7 @@ interface DeclarationContextType {
   approveDeclaration: (id: string, approve: boolean, reason?: string) => void;
   deleteDeclaration: (id: string) => void;
   getDeclarationById: (id: string) => Declaration | undefined;
+  submitDeclaration: (id: string) => void;
   loading: boolean;
 }
 
@@ -67,6 +67,7 @@ const DeclarationContext = createContext<DeclarationContextType>({
   approveDeclaration: () => {},
   deleteDeclaration: () => {},
   getDeclarationById: () => undefined,
+  submitDeclaration: () => {},
   loading: true,
 });
 
@@ -75,7 +76,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load declarations from localStorage or initialize with default data
   useEffect(() => {
     const storedDeclarations = localStorage.getItem('polytechDeclarations');
     if (storedDeclarations) {
@@ -87,7 +87,6 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(false);
   }, []);
 
-  // Update localStorage whenever declarations change
   useEffect(() => {
     if (declarations.length > 0) {
       localStorage.setItem('polytechDeclarations', JSON.stringify(declarations));
@@ -184,6 +183,32 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     );
     toast.success('Déclaration mise à jour');
     console.log("Updated declaration:", id);
+  };
+
+  const submitDeclaration = (id: string) => {
+    console.log("Submitting declaration:", id);
+    
+    const declaration = declarations.find(d => d.id === id);
+    if (!declaration) {
+      console.error("Declaration not found for submission:", id);
+      toast.error('Déclaration introuvable');
+      return;
+    }
+    
+    const updatedDeclarations = declarations.map(d =>
+      d.id === id
+        ? {
+            ...d,
+            status: 'soumise' as DeclarationStatus,
+            updated_at: new Date().toISOString(),
+          }
+        : d
+    );
+    
+    setDeclarations(updatedDeclarations);
+    toast.success('Déclaration soumise pour vérification');
+    toast.info('La scolarité a été notifiée');
+    console.log("Updated declaration status to submitted:", id);
   };
 
   const verifyDeclaration = (id: string, verify: boolean, reason?: string) => {
@@ -367,6 +392,7 @@ export const DeclarationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         approveDeclaration,
         deleteDeclaration,
         getDeclarationById,
+        submitDeclaration,
         loading,
       }}
     >

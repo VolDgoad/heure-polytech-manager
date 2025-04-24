@@ -139,7 +139,7 @@ const DeclarationForm = ({ existingDeclaration, isReadOnly = false }: Declaratio
   };
 
   const handleSubmitDeclaration = () => {
-    if (existingDeclaration) {
+    if (existingDeclaration && existingDeclaration.id) {
       submitDeclaration(existingDeclaration.id);
       navigate('/declarations');
     }
