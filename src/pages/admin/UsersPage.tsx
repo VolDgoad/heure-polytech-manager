@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,8 @@ import {
   DialogContent, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { 
   Select,
@@ -27,7 +27,8 @@ import {
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { Edit, Lock, UserCog } from 'lucide-react';
+import { UserCog, Lock, UserPlus } from 'lucide-react';
+import UserForm, { UserFormData } from '@/components/admin/UserForm';
 
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -39,6 +40,7 @@ const UsersPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [passwordResetDialog, setPasswordResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roles: {value: UserRole, label: string}[] = [
     { value: 'admin', label: 'Administrateur' },
@@ -132,13 +134,66 @@ const UsersPage = () => {
     }
   };
 
+  const handleCreateUser = async (userData: UserFormData) => {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        email_confirm: true,
+        user_metadata: {
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+        }
+      });
+
+      if (authError) throw authError;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          role: userData.role,
+          department_id: userData.department_id || null,
+          grade: userData.grade,
+        })
+        .eq('id', authData.user.id);
+
+      if (profileError) throw profileError;
+
+      toast.success('Utilisateur créé avec succès');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast.error(`Erreur lors de la création: ${error.message}`);
+    }
+  };
+
   const getRoleName = (role: UserRole) => {
     return roles.find(r => r.value === role)?.label || role;
   };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Gestion des Utilisateurs</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Gestion des Utilisateurs</h1>
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nouvel utilisateur
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
+            </DialogHeader>
+            <UserForm 
+              onSubmit={handleCreateUser}
+              departments={departments}
+              isSubmitting={isSubmitting}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>
@@ -205,7 +260,6 @@ const UsersPage = () => {
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -275,7 +329,6 @@ const UsersPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Password Reset Dialog */}
       <Dialog open={passwordResetDialog} onOpenChange={setPasswordResetDialog}>
         <DialogContent>
           <DialogHeader>
