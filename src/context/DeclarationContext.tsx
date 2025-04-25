@@ -146,35 +146,42 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
     
     let filtered: Declaration[] = [];
     
+    console.log('Determining pending declarations for user role:', user.role);
+    console.log('Current declarations:', declarations);
+    
     switch(user.role) {
       case 'scolarite':
+        // Scolarité sees declarations with status "soumise"
         filtered = declarations.filter(d => d.status === 'soumise');
-        console.log('DeclarationContext - Scolarite filtered:', filtered);
+        console.log('Scolarité filtered declarations:', filtered);
         break;
       case 'chef_departement':
+        // Chef de département sees declarations with status "verifiee" and matching department_id
         filtered = declarations.filter(d => 
           d.status === 'verifiee' && 
           d.department_id === user.department_id
         );
-        console.log('DeclarationContext - Chef dept filtered:', filtered);
+        console.log('Chef département filtered declarations:', filtered);
         break;
       case 'directrice_etudes':
+        // Directrice des études sees declarations with status "validee"
         filtered = declarations.filter(d => d.status === 'validee');
-        console.log('DeclarationContext - Directrice filtered:', filtered);
+        console.log('Directrice études filtered declarations:', filtered);
         break;
       case 'enseignant':
+        // Enseignants see their own declarations with status "brouillon"
         filtered = declarations.filter(d => 
           d.teacher_id === user.id && 
           d.status === 'brouillon'
         );
-        console.log('DeclarationContext - Enseignant filtered:', filtered);
+        console.log('Enseignant filtered declarations:', filtered);
         break;
       default:
         filtered = [];
     }
     
     setPendingDeclarations(filtered);
-    console.log('DeclarationContext - Setting pending declarations:', filtered);
+    console.log('Setting pendingDeclarations to:', filtered);
   };
 
   // Function to get a declaration by ID

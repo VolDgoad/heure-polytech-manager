@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 
 export const PendingDeclarationsTable = () => {
   const { user } = useAuth();
-  const { declarations, pendingDeclarations } = useDeclarations();
+  const { pendingDeclarations } = useDeclarations();
   const navigate = useNavigate();
   const [displayDeclarations, setDisplayDeclarations] = useState<Declaration[]>([]);
 

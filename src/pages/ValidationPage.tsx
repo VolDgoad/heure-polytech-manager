@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -102,7 +101,7 @@ const ValidationPage = () => {
     return "Aucune fiche en attente.";
   };
   
-  console.log("ValidationPage - rendering with filtered pending:", filteredPending);
+  console.log("ValidationPage - rendering with filtered pending:", pendingDeclarations);
   
   return (
     <div className="space-y-6">
