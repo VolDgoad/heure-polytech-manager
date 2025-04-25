@@ -3,14 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useDeclarations } from '@/context/DeclarationContext';
-import { Declaration } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import DeclarationCard from '@/components/DeclarationCard';
 
-const ValidationPage = () => {
+const ApprobationPage = () => {
   const { user } = useAuth();
   const { pendingDeclarations, validatedDeclarations } = useDeclarations();
   const navigate = useNavigate();
@@ -23,15 +22,15 @@ const ValidationPage = () => {
       return;
     }
     
-    // Cette page est réservée aux chefs de département
-    if (user.role !== 'chef_departement') {
+    // Cette page est réservée à la directrice des études
+    if (user.role !== 'directrice_etudes') {
       navigate('/unauthorized');
       return;
     }
     
     setLoading(false);
-    console.log("ValidationPage - Chef département - pending declarations:", pendingDeclarations);
-    console.log("ValidationPage - Chef département - validated declarations:", validatedDeclarations);
+    console.log("ApprobationPage - Directrice études - pending declarations:", pendingDeclarations);
+    console.log("ApprobationPage - Directrice études - validated declarations:", validatedDeclarations);
     
   }, [user, pendingDeclarations, validatedDeclarations, navigate]);
 
@@ -50,16 +49,16 @@ const ValidationPage = () => {
       (declaration.course_element_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  if (!user || user.role !== 'chef_departement') {
+  if (!user || user.role !== 'directrice_etudes') {
     return null;
   }
   
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Validation des fiches de service</h1>
+        <h1 className="text-2xl font-bold">Approbation des fiches de service</h1>
         <p className="text-muted-foreground">
-          Validez les fiches de service vérifiées par la scolarité pour votre département
+          Approuvez les fiches de service validées par les chefs de département
         </p>
       </div>
       
@@ -87,7 +86,7 @@ const ValidationPage = () => {
             <div className="text-center py-8">Chargement des fiches...</div>
           ) : filteredPending.length === 0 ? (
             <Card className="flex justify-center items-center h-40">
-              <p className="text-muted-foreground">Aucune fiche en attente de validation par le chef de département.</p>
+              <p className="text-muted-foreground">Aucune fiche en attente d'approbation.</p>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -95,7 +94,7 @@ const ValidationPage = () => {
                 <DeclarationCard 
                   key={declaration.id} 
                   declaration={declaration} 
-                  actions="validate" 
+                  actions="approve" 
                 />
               ))}
             </div>
@@ -126,4 +125,4 @@ const ValidationPage = () => {
   );
 };
 
-export default ValidationPage;
+export default ApprobationPage;

@@ -14,10 +14,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from "@/components/ui/progress";
 import { toast } from '@/components/ui/sonner';
 
-const ValidationDetailsPage = () => {
+const ApprobationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { validateDeclaration, getDeclarationById } = useDeclarations();
+  const { declarations, approveDeclaration, getDeclarationById } = useDeclarations();
   const navigate = useNavigate();
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -29,23 +29,23 @@ const ValidationDetailsPage = () => {
       return;
     }
     
-    console.log("ValidationDetailsPage - Looking for declaration with ID:", id);
+    console.log("ApprobationDetailsPage - Looking for declaration with ID:", id);
     
     const foundDeclaration = getDeclarationById(id);
-    console.log("ValidationDetailsPage - Found declaration:", foundDeclaration);
+    console.log("ApprobationDetailsPage - Found declaration:", foundDeclaration);
     
     setDeclaration(foundDeclaration);
-  }, [id, getDeclarationById]);
+  }, [id, declarations, getDeclarationById]);
   
-  // Vérifier que l'utilisateur est bien un chef de département
-  if (!user || user.role !== 'chef_departement') {
+  // Vérifier que l'utilisateur est bien la directrice des études
+  if (!user || user.role !== 'directrice_etudes') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
           <FileText className="h-4 w-4" />
           <AlertTitle>Accès refusé</AlertTitle>
           <AlertDescription>
-            Vous n'avez pas les droits pour valider des déclarations.
+            Vous n'avez pas les droits pour approuver des déclarations.
             <div className="mt-4">
               <Button onClick={() => navigate('/dashboard')}>
                 Retour au tableau de bord
@@ -65,10 +65,10 @@ const ValidationDetailsPage = () => {
           <FileText className="h-4 w-4" />
           <AlertTitle>Déclaration introuvable</AlertTitle>
           <AlertDescription>
-            La déclaration que vous essayez de valider n'existe pas ou a été supprimée.
+            La déclaration que vous essayez d'approuver n'existe pas ou a été supprimée.
             <div className="mt-4">
-              <Button onClick={() => navigate('/validation')}>
-                Retour aux validations
+              <Button onClick={() => navigate('/approbation')}>
+                Retour aux approbations
               </Button>
             </div>
           </AlertDescription>
@@ -77,19 +77,19 @@ const ValidationDetailsPage = () => {
     );
   }
 
-  // Vérifier que la déclaration est bien en attente de validation (status = verifiee)
-  if (declaration.status !== 'verifiee') {
+  // Vérifier que la déclaration est bien en attente d'approbation (status = validee)
+  if (declaration.status !== 'validee') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Alert variant="destructive" className="max-w-md">
           <FileText className="h-4 w-4" />
           <AlertTitle>Statut non valide</AlertTitle>
           <AlertDescription>
-            Cette déclaration n'est pas en attente de validation.
+            Cette déclaration n'est pas en attente d'approbation.
             Son statut actuel est: <span className="font-semibold">{declaration.status}</span>.
             <div className="mt-4">
-              <Button onClick={() => navigate('/validation')}>
-                Retour aux validations
+              <Button onClick={() => navigate('/approbation')}>
+                Retour aux approbations
               </Button>
             </div>
           </AlertDescription>
@@ -98,36 +98,16 @@ const ValidationDetailsPage = () => {
     );
   }
 
-  // Vérifier que la déclaration appartient au département du chef
-  if (declaration.department_id !== user.department_id) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Alert variant="destructive" className="max-w-md">
-          <FileText className="h-4 w-4" />
-          <AlertTitle>Accès refusé</AlertTitle>
-          <AlertDescription>
-            Vous n'avez pas les droits pour valider cette déclaration car elle n'appartient pas à votre département.
-            <div className="mt-4">
-              <Button onClick={() => navigate('/validation')}>
-                Retour aux validations
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const handleValidate = () => {
+  const handleApprove = () => {
     if (!declaration) return;
     
     try {
-      validateDeclaration(declaration.id, true);
-      toast.success('Déclaration validée avec succès');
-      navigate('/validation');
+      approveDeclaration(declaration.id, true);
+      toast.success('Déclaration approuvée avec succès');
+      navigate('/approbation');
     } catch (error) {
-      console.error('Error validating declaration:', error);
-      toast.error('Une erreur est survenue lors de la validation');
+      console.error('Error approving declaration:', error);
+      toast.error('Une erreur est survenue lors de l\'approbation');
     }
   };
   
@@ -135,9 +115,9 @@ const ValidationDetailsPage = () => {
     if (!rejectionReason || !declaration) return;
     
     try {
-      validateDeclaration(declaration.id, false, rejectionReason);
+      approveDeclaration(declaration.id, false, rejectionReason);
       toast.success('Déclaration rejetée avec succès');
-      navigate('/validation');
+      navigate('/approbation');
     } catch (error) {
       console.error('Error rejecting declaration:', error);
       toast.error('Une erreur est survenue lors du rejet');
@@ -162,17 +142,17 @@ const ValidationDetailsPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            Validation
+            Approbation
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
-            {declaration.status === 'verifiee' && 
-              `Vérifiée le ${format(parseISO(declaration.verified_at || declaration.updated_at), 'PPP', { locale: fr })}`}
+            {declaration.status === 'validee' && 
+              `Validée le ${format(parseISO(declaration.validated_at || declaration.updated_at), 'PPP', { locale: fr })}`}
           </p>
         </div>
         
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => navigate('/validation')}>
+          <Button variant="outline" onClick={() => navigate('/approbation')}>
             Retour
           </Button>
         </div>
@@ -257,6 +237,13 @@ const ValidationDetailsPage = () => {
               <p className="mt-1">{declaration.verified_by}</p>
             </div>
           )}
+          
+          {declaration.validated_by && (
+            <div className="mt-6 pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500">Validée par</h3>
+              <p className="mt-1">{declaration.validated_by}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -299,10 +286,10 @@ const ValidationDetailsPage = () => {
           <Button 
             variant="default" 
             className="bg-green-600 hover:bg-green-700"
-            onClick={handleValidate}
+            onClick={handleApprove}
           >
             <CheckCircle className="mr-2 h-4 w-4" />
-            Valider
+            Approuver
           </Button>
         </div>
       )}
@@ -310,4 +297,4 @@ const ValidationDetailsPage = () => {
   );
 };
 
-export default ValidationDetailsPage;
+export default ApprobationDetailsPage;

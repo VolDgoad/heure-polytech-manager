@@ -1,3 +1,4 @@
+
 import { useDeclarations } from "@/context/DeclarationContext";
 import { useAuth } from "@/context/AuthContext";
 import { Declaration } from "@/types";
@@ -54,7 +55,7 @@ export const PendingDeclarationsTable = () => {
       case "scolarite":
         return `/verification/${declaration.id}`;
       case "directrice_etudes":
-        return `/validation/${declaration.id}`;
+        return `/approbation/${declaration.id}`;
       default:
         return `/declarations/${declaration.id}`;
     }
@@ -134,8 +135,10 @@ export const PendingDeclarationsTable = () => {
             onClick={() => {
               switch (user.role) {
                 case "chef_departement":
-                case "directrice_etudes":
                   navigate("/validation");
+                  break;
+                case "directrice_etudes":
+                  navigate("/approbation");
                   break;
                 case "scolarite":
                   navigate("/verification");

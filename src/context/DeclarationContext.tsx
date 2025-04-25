@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/sonner';
 interface DeclarationContextType {
   declarations: Declaration[];
   pendingDeclarations: Declaration[];
+  validatedDeclarations: Declaration[];
   getDeclarationById: (id: string) => Declaration | undefined;
   createDeclaration: (sessions: any) => Promise<void>;
   updateDeclaration: (id: string, sessions: any) => Promise<void>;
@@ -23,6 +24,7 @@ interface DeclarationContextType {
 const DeclarationContext = createContext<DeclarationContextType>({
   declarations: [],
   pendingDeclarations: [],
+  validatedDeclarations: [],
   getDeclarationById: () => undefined,
   createDeclaration: async () => {},
   updateDeclaration: async () => {},
@@ -88,6 +90,25 @@ const INITIAL_DECLARATIONS: Declaration[] = [
     updated_at: '2023-05-20T09:00:00Z',
     totalHours: 4
   },
+  {
+    id: '4',
+    teacher_id: '2',
+    teacherName: 'Dr. Fatou Ndiaye',
+    departmentName: 'Mathématiques',
+    department_id: 'dept2',
+    course_element_id: 'ce4',
+    cm_hours: 4,
+    td_hours: 2,
+    tp_hours: 0,
+    declaration_date: '2023-05-21',
+    status: 'validee',
+    payment_status: 'non_paye',
+    created_at: '2023-05-21T10:20:00Z',
+    updated_at: '2023-05-22T14:30:00Z',
+    validated_by: 'uid456',
+    validated_at: '2023-05-22T14:30:00Z',
+    totalHours: 6
+  }
 ];
 
 // Create the provider component
@@ -95,6 +116,7 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [declarations, setDeclarations] = useState<Declaration[]>(INITIAL_DECLARATIONS);
   const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
+  const [validatedDeclarations, setValidatedDeclarations] = useState<Declaration[]>([]);
 
   // Fetch declarations on mount or when user changes
   useEffect(() => {
@@ -125,63 +147,91 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
     // fetchDeclarations();
     
     // Filter pending declarations based on user role
-    filterPendingDeclarations();
+    filterDeclarations();
     
     console.log('DeclarationContext - User role:', user?.role);
     console.log('DeclarationContext - Initial declarations:', INITIAL_DECLARATIONS);
     
   }, [user]);
 
-  // Filter pending declarations based on user role whenever declarations change
+  // Filter declarations based on user role whenever declarations change
   useEffect(() => {
-    filterPendingDeclarations();
+    filterDeclarations();
   }, [declarations, user]);
   
-  // Function to filter pending declarations based on user role
-  const filterPendingDeclarations = () => {
+  // Function to filter declarations based on user role
+  const filterDeclarations = () => {
     if (!user) {
       setPendingDeclarations([]);
+      setValidatedDeclarations([]);
       return;
     }
     
-    let filtered: Declaration[] = [];
+    let pendingFiltered: Declaration[] = [];
+    let validatedFiltered: Declaration[] = [];
     
-    console.log('Determining pending declarations for user role:', user.role);
+    console.log('Filtering declarations for user role:', user.role);
     console.log('Current declarations:', declarations);
     
     switch(user.role) {
       case 'scolarite':
         // Scolarité sees declarations with status "soumise"
-        filtered = declarations.filter(d => d.status === 'soumise');
-        console.log('Scolarité filtered declarations:', filtered);
+        pendingFiltered = declarations.filter(d => d.status === 'soumise');
+        validatedFiltered = declarations.filter(d => 
+          d.status === 'verifiee' || d.status === 'rejetee' && d.verified_by === user.id
+        );
+        console.log('Scolarité filtered pending:', pendingFiltered);
+        console.log('Scolarité filtered validated:', validatedFiltered);
         break;
+        
       case 'chef_departement':
         // Chef de département sees declarations with status "verifiee" and matching department_id
-        filtered = declarations.filter(d => 
+        pendingFiltered = declarations.filter(d => 
           d.status === 'verifiee' && 
           d.department_id === user.department_id
         );
-        console.log('Chef département filtered declarations:', filtered);
+        validatedFiltered = declarations.filter(d => 
+          (d.status === 'validee' || d.status === 'rejetee') && 
+          d.validated_by === user.id
+        );
+        console.log('Chef département filtered pending:', pendingFiltered);
+        console.log('Chef département filtered validated:', validatedFiltered);
         break;
+        
       case 'directrice_etudes':
         // Directrice des études sees declarations with status "validee"
-        filtered = declarations.filter(d => d.status === 'validee');
-        console.log('Directrice études filtered declarations:', filtered);
+        pendingFiltered = declarations.filter(d => d.status === 'validee');
+        validatedFiltered = declarations.filter(d => 
+          (d.status === 'approuvee' || d.status === 'rejetee') && 
+          d.approved_by === user.id
+        );
+        console.log('Directrice études filtered pending:', pendingFiltered);
+        console.log('Directrice études filtered validated:', validatedFiltered);
         break;
+        
       case 'enseignant':
         // Enseignants see their own declarations with status "brouillon"
-        filtered = declarations.filter(d => 
+        pendingFiltered = declarations.filter(d => 
           d.teacher_id === user.id && 
           d.status === 'brouillon'
         );
-        console.log('Enseignant filtered declarations:', filtered);
+        validatedFiltered = declarations.filter(d => 
+          d.teacher_id === user.id && 
+          d.status !== 'brouillon'
+        );
+        console.log('Enseignant filtered pending:', pendingFiltered);
+        console.log('Enseignant filtered validated:', validatedFiltered);
         break;
+        
       default:
-        filtered = [];
+        pendingFiltered = [];
+        validatedFiltered = [];
     }
     
-    setPendingDeclarations(filtered);
-    console.log('Setting pendingDeclarations to:', filtered);
+    setPendingDeclarations(pendingFiltered);
+    setValidatedDeclarations(validatedFiltered);
+    console.log('Setting pendingDeclarations to:', pendingFiltered);
+    console.log('Setting validatedDeclarations to:', validatedFiltered);
   };
 
   // Function to get a declaration by ID
@@ -419,6 +469,7 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
     <DeclarationContext.Provider value={{
       declarations,
       pendingDeclarations,
+      validatedDeclarations,
       getDeclarationById,
       createDeclaration,
       updateDeclaration,

@@ -17,6 +17,8 @@ import VerificationPage from "./pages/VerificationPage";
 import VerificationDetailsPage from "./pages/VerificationDetailsPage";
 import ValidationPage from "./pages/ValidationPage";
 import ValidationDetailsPage from "./pages/ValidationDetailsPage";
+import ApprobationPage from "./pages/ApprobationPage";
+import ApprobationDetailsPage from "./pages/ApprobationDetailsPage";
 import ProfilePage from "./pages/ProfilePage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import NotFound from "./pages/NotFound";
@@ -112,7 +114,7 @@ const App = () => (
               <Route 
                 path="validation" 
                 element={
-                  <ProtectedRoute allowedRoles={['chef_departement', 'directrice_etudes']}>
+                  <ProtectedRoute allowedRoles={['chef_departement']}>
                     <ValidationPage />
                   </ProtectedRoute>
                 } 
@@ -121,8 +123,26 @@ const App = () => (
               <Route 
                 path="validation/:id" 
                 element={
-                  <ProtectedRoute allowedRoles={['chef_departement', 'directrice_etudes']}>
+                  <ProtectedRoute allowedRoles={['chef_departement']}>
                     <ValidationDetailsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="approbation" 
+                element={
+                  <ProtectedRoute allowedRoles={['directrice_etudes']}>
+                    <ApprobationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="approbation/:id" 
+                element={
+                  <ProtectedRoute allowedRoles={['directrice_etudes']}>
+                    <ApprobationDetailsPage />
                   </ProtectedRoute>
                 } 
               />
