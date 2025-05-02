@@ -1,9 +1,9 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { Declaration, DeclarationStatus, PaymentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { NotificationService } from '@/services/NotificationService';
 
 // Define the context type
 interface DeclarationContextType {
@@ -281,6 +281,14 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         return d;
       });
       
+      // Get the updated declaration
+      const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
+      
+      // Send notification
+      if (updatedDeclaration && user) {
+        await NotificationService.notifyStatusChange(updatedDeclaration, user, 'soumise');
+      }
+      
       setDeclarations(updatedDeclarations);
       toast.success('Déclaration soumise avec succès');
       
@@ -322,6 +330,18 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         }
         return d;
       });
+      
+      // Get the updated declaration
+      const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
+      
+      // Send notification
+      if (updatedDeclaration && user) {
+        await NotificationService.notifyStatusChange(
+          updatedDeclaration, 
+          user, 
+          isVerified ? 'verifiee' : 'rejetee'
+        );
+      }
       
       setDeclarations(updatedDeclarations);
       
@@ -370,6 +390,18 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         return d;
       });
       
+      // Get the updated declaration
+      const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
+      
+      // Send notification
+      if (updatedDeclaration && user) {
+        await NotificationService.notifyStatusChange(
+          updatedDeclaration, 
+          user, 
+          isValidated ? 'validee' : 'rejetee'
+        );
+      }
+      
       setDeclarations(updatedDeclarations);
       
       if (isValidated) {
@@ -416,6 +448,18 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         }
         return d;
       });
+      
+      // Get the updated declaration
+      const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
+      
+      // Send notification
+      if (updatedDeclaration && user) {
+        await NotificationService.notifyStatusChange(
+          updatedDeclaration, 
+          user, 
+          isApproved ? 'approuvee' : 'rejetee'
+        );
+      }
       
       setDeclarations(updatedDeclarations);
       

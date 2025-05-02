@@ -17,7 +17,7 @@ import { toast } from '@/components/ui/sonner';
 const ApprobationDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { declarations, approveDeclaration, getDeclarationById } = useDeclarations();
+  const { approveDeclaration, getDeclarationById } = useDeclarations();
   const navigate = useNavigate();
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -35,9 +35,9 @@ const ApprobationDetailsPage = () => {
     console.log("ApprobationDetailsPage - Found declaration:", foundDeclaration);
     
     setDeclaration(foundDeclaration);
-  }, [id, declarations, getDeclarationById]);
+  }, [id, getDeclarationById]);
   
-  // Vérifier que l'utilisateur est bien la directrice des études
+  // Vérifier que l'utilisateur est bien une directrice des études
   if (!user || user.role !== 'directrice_etudes') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -142,7 +142,7 @@ const ApprobationDetailsPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            Approbation
+            Approbation Finale
             <DeclarationStatusBadge status={declaration.status} />
           </h1>
           <p className="text-muted-foreground">
@@ -203,7 +203,11 @@ const ApprobationDetailsPage = () => {
                 <Calendar className="h-4 w-4 text-blue-500" />
                 Date de déclaration
               </h3>
-              <p className="mt-1 font-semibold">{format(new Date(declaration.declaration_date), 'PPP', { locale: fr })}</p>
+              <p className="mt-1 font-semibold">
+                {declaration.declaration_date ? 
+                  format(new Date(declaration.declaration_date), 'PPP', { locale: fr }) :
+                  format(new Date(declaration.created_at), 'PPP', { locale: fr })}
+              </p>
             </div>
           </div>
           
@@ -226,24 +230,29 @@ const ApprobationDetailsPage = () => {
             </div>
           </div>
           
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500">Élément Constitutif</h3>
-            <p className="mt-1">{declaration.course_element_id}</p>
+          <div className="mt-6 pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-6">
+            {declaration.verified_by && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Vérifiée par</h3>
+                <p className="mt-1">{declaration.verified_by}</p>
+                <p className="text-xs text-gray-500">
+                  {declaration.verified_at && 
+                    format(parseISO(declaration.verified_at), 'PPP', { locale: fr })}
+                </p>
+              </div>
+            )}
+            
+            {declaration.validated_by && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Validée par</h3>
+                <p className="mt-1">{declaration.validated_by}</p>
+                <p className="text-xs text-gray-500">
+                  {declaration.validated_at && 
+                    format(parseISO(declaration.validated_at), 'PPP', { locale: fr })}
+                </p>
+              </div>
+            )}
           </div>
-          
-          {declaration.verified_by && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-medium text-gray-500">Vérifiée par</h3>
-              <p className="mt-1">{declaration.verified_by}</p>
-            </div>
-          )}
-          
-          {declaration.validated_by && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-medium text-gray-500">Validée par</h3>
-              <p className="mt-1">{declaration.validated_by}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
       
