@@ -63,46 +63,44 @@ export const PendingDeclarationsTable = () => {
 
   if (displayDeclarations.length === 0) {
     return (
-      <Card className="border shadow-sm">
-        <CardContent className="p-6">
-          <Alert variant="default" className="bg-blue-50 border-blue-100 text-blue-800">
-            <AlertDescription>
-              Aucune déclaration en attente pour le moment.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div className="p-6">
+        <Alert variant="default" className="bg-blue-50 border-blue-100 text-blue-800">
+          <AlertDescription>
+            Aucune déclaration en attente pour le moment.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="p-4">
+    <div className="p-0">
       {displayDeclarations.length > 0 ? (
-        <div className="rounded-md overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead>Date</TableHead>
-                <TableHead>Enseignant</TableHead>
-                <TableHead>Département</TableHead>
-                <TableHead>Élément Constitutif</TableHead>
-                <TableHead>Heures</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+              <TableRow className="bg-gray-50 hover:bg-gray-50">
+                <TableHead className="font-semibold">Date</TableHead>
+                <TableHead className="font-semibold">Enseignant</TableHead>
+                <TableHead className="font-semibold hidden md:table-cell">Département</TableHead>
+                <TableHead className="font-semibold hidden md:table-cell">EC</TableHead>
+                <TableHead className="font-semibold hidden md:table-cell">Heures</TableHead>
+                <TableHead className="font-semibold">Statut</TableHead>
+                <TableHead className="text-right"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayDeclarations.slice(0, 5).map((declaration) => (
-                <TableRow key={declaration.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">
+                <TableRow key={declaration.id} className="hover:bg-gray-50 border-b">
+                  <TableCell className="font-medium text-sm">
                     {declaration.declaration_date ? 
                       format(new Date(declaration.declaration_date), 'dd/MM/yyyy', { locale: fr }) : 
                       'N/A'}
                   </TableCell>
-                  <TableCell>{declaration.teacherName || declaration.teacher_id}</TableCell>
-                  <TableCell>{declaration.departmentName || declaration.department_id}</TableCell>
-                  <TableCell>{declaration.course_element_id}</TableCell>
-                  <TableCell>{declaration.totalHours}h</TableCell>
+                  <TableCell className="text-sm">{declaration.teacherName || declaration.teacher_id}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm">{declaration.departmentName || declaration.department_id}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm">{declaration.course_element_id}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm">{declaration.totalHours}h</TableCell>
                   <TableCell>
                     <DeclarationStatusBadge status={declaration.status} />
                   </TableCell>
@@ -111,10 +109,9 @@ export const PendingDeclarationsTable = () => {
                       variant="ghost" 
                       size="sm" 
                       onClick={() => navigate(getActionRoute(declaration))}
-                      className="hover:bg-blue-50"
+                      className="hover:bg-blue-50 text-blue-600 hover:text-blue-800"
                     >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Voir
+                      <Eye className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -125,33 +122,6 @@ export const PendingDeclarationsTable = () => {
       ) : (
         <div className="text-center py-10 border rounded-md bg-gray-50">
           <p className="text-muted-foreground">Aucune déclaration en attente pour le moment.</p>
-        </div>
-      )}
-      {displayDeclarations.length > 5 && (
-        <div className="flex justify-end mt-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              switch (user.role) {
-                case "chef_departement":
-                  navigate("/validation");
-                  break;
-                case "directrice_etudes":
-                  navigate("/approbation");
-                  break;
-                case "scolarite":
-                  navigate("/verification");
-                  break;
-                default:
-                  navigate("/declarations");
-                  break;
-              }
-            }}
-            className="hover:bg-blue-50"
-          >
-            Voir toutes les déclarations
-          </Button>
         </div>
       )}
     </div>

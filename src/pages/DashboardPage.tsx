@@ -5,10 +5,13 @@ import { PendingDeclarationsTable } from '@/components/dashboard/PendingDeclarat
 import { DeclarationChart } from '@/components/dashboard/DeclarationChart';
 import { DeclarationProvider } from '@/context/DeclarationContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Clock, CalendarCheck, BadgeCheck, User } from 'lucide-react';
+import { FileText, Clock, CalendarCheck, BadgeCheck, User, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -61,6 +64,23 @@ const DashboardPage = () => {
     }
   };
 
+  const getMainRoute = () => {
+    switch (user.role) {
+      case "enseignant":
+        return "/declarations";
+      case "chef_departement":
+        return "/validation";
+      case "scolarite":
+        return "/verification";
+      case "directrice_etudes":
+        return "/approbation";
+      case "admin":
+        return "/admin/users";
+      default:
+        return "/";
+    }
+  };
+
   const getCurrentDate = () => {
     return new Date().toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -72,59 +92,72 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm border-none">
+      <Card className="bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 shadow-sm border-none overflow-hidden">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row justify-between">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div>
               <h1 className="text-2xl font-bold mb-1">{welcomeMessage()}</h1>
-              <div className="flex items-center text-muted-foreground gap-1">
+              <div className="flex items-center text-muted-foreground gap-2">
                 <User className="h-4 w-4" />
-                <span>{getRoleName()} {user.department_id ? "• Département" : "• Polytech Diamniadio"}</span>
+                <span className="text-sm">{getRoleName()} {user.department_id ? "• Département" : "• Polytech Diamniadio"}</span>
               </div>
             </div>
-            <div className="mt-4 md:mt-0">
-              <div className="text-sm text-muted-foreground flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>{getCurrentDate()}</span>
-              </div>
+            <div className="mt-4 md:mt-0 flex items-center">
+              <Clock className="h-4 w-4 mr-1 text-blue-500" />
+              <span className="text-sm font-medium">{getCurrentDate()}</span>
             </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-blue-100">
+            <Button 
+              variant="default" 
+              className="bg-blue-600 hover:bg-blue-700"
+              size="sm"
+              onClick={() => navigate(getMainRoute())}
+            >
+              {getMainTitle()}
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <BadgeCheck className="h-5 w-5 text-blue-600" />
-          {getMainTitle()}
-        </h2>
-      </div>
-
       <DeclarationProvider>
         <StatisticsCards />
         
-        <Card className="shadow-sm border">
-          <CardHeader className="bg-gray-50 border-b">
-            <CardTitle className="text-lg flex items-center">
-              <CalendarCheck className="h-5 w-5 mr-2 text-blue-600" />
-              Activité récente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <PendingDeclarationsTable />
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-sm border">
-          <CardHeader className="bg-gray-50 border-b">
-            <CardTitle className="text-lg flex items-center">
-              <FileText className="h-5 w-5 mr-2 text-blue-600" />
-              Statistiques des déclarations
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <DeclarationChart />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-sm border overflow-hidden">
+            <CardHeader className="bg-gray-50 border-b flex flex-row items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                <CalendarCheck className="h-5 w-5 mr-2 text-blue-600" />
+                Activité récente
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(getMainRoute())}
+                className="text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              >
+                Tout voir
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              <PendingDeclarationsTable />
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-sm border overflow-hidden">
+            <CardHeader className="bg-gray-50 border-b">
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                Statistiques des déclarations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <DeclarationChart />
+            </CardContent>
+          </Card>
+        </div>
       </DeclarationProvider>
     </div>
   );

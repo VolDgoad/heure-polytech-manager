@@ -1,9 +1,9 @@
-
 import { useDeclarations } from "@/context/DeclarationContext";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Declaration, DeclarationStatus } from "@/types";
 import { CircleCheck, FileCheck, FileText, FileClock, AlertTriangle, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const StatisticsCards = () => {
   const { user } = useAuth();
@@ -124,29 +124,33 @@ export const StatisticsCards = () => {
               title="À valider"
               value={stats.pendingValidation}
               description="Déclarations vérifiées à valider"
-              icon={<FileClock className="h-5 w-5 text-yellow-500" />}
-              color="bg-yellow-50 shadow-sm border-t-yellow-500"
+              icon={<FileClock className="h-5 w-5" />}
+              className="from-amber-50 to-amber-100 border-l-amber-500"
+              iconColor="text-amber-500"
             />
             <StatCard
               title="Validées"
               value={stats.validated}
               description="Déclarations que vous avez validées"
-              icon={<FileCheck className="h-5 w-5 text-blue-500" />}
-              color="bg-blue-50 shadow-sm border-t-blue-500"
+              icon={<FileCheck className="h-5 w-5" />}
+              className="from-blue-50 to-blue-100 border-l-blue-500"
+              iconColor="text-blue-500"
             />
             <StatCard
               title="Approuvées"
               value={stats.approved}
               description="Déclarations de votre département approuvées"
-              icon={<CircleCheck className="h-5 w-5 text-green-500" />}
-              color="bg-green-50 shadow-sm border-t-green-500"
+              icon={<CircleCheck className="h-5 w-5" />}
+              className="from-green-50 to-green-100 border-l-green-500"
+              iconColor="text-green-500"
             />
             <StatCard
               title="Rejetées"
               value={stats.rejected}
               description="Déclarations rejetées dans votre département"
-              icon={<AlertTriangle className="h-5 w-5 text-red-500" />}
-              color="bg-red-50 shadow-sm border-t-red-500"
+              icon={<AlertTriangle className="h-5 w-5" />}
+              className="from-red-50 to-red-100 border-l-red-500"
+              iconColor="text-red-500"
             />
           </>
         );
@@ -158,29 +162,33 @@ export const StatisticsCards = () => {
               title="À vérifier"
               value={stats.pendingVerification}
               description="Déclarations en attente de vérification"
-              icon={<FileClock className="h-5 w-5 text-yellow-500" />}
-              color="bg-yellow-50 shadow-sm border-t-yellow-500"
+              icon={<FileClock className="h-5 w-5" />}
+              className="from-amber-50 to-amber-100 border-l-amber-500"
+              iconColor="text-amber-500"
             />
             <StatCard
               title="Vérifiées"
               value={stats.verified}
               description="Déclarations que vous avez vérifiées"
-              icon={<FileCheck className="h-5 w-5 text-blue-500" />}
-              color="bg-blue-50 shadow-sm border-t-blue-500"
+              icon={<FileCheck className="h-5 w-5" />}
+              className="from-blue-50 to-blue-100 border-l-blue-500"
+              iconColor="text-blue-500"
             />
             <StatCard
               title="Rejetées"
               value={stats.rejected}
               description="Déclarations que vous avez rejetées"
-              icon={<AlertTriangle className="h-5 w-5 text-red-500" />}
-              color="bg-red-50 shadow-sm border-t-red-500"
+              icon={<AlertTriangle className="h-5 w-5" />}
+              className="from-red-50 to-red-100 border-l-red-500"
+              iconColor="text-red-500"
             />
             <StatCard
               title="Total"
               value={stats.total}
               description="Toutes les déclarations"
-              icon={<FileText className="h-5 w-5 text-purple-500" />}
-              color="bg-purple-50 shadow-sm border-t-purple-500"
+              icon={<FileText className="h-5 w-5" />}
+              className="from-purple-50 to-purple-100 border-l-purple-500"
+              iconColor="text-purple-500"
             />
           </>
         );
@@ -192,29 +200,33 @@ export const StatisticsCards = () => {
               title="À approuver"
               value={stats.pendingApproval}
               description="Déclarations validées en attente d'approbation"
-              icon={<FileClock className="h-5 w-5 text-yellow-500" />}
-              color="bg-yellow-50 shadow-sm border-t-yellow-500"
+              icon={<FileClock className="h-5 w-5" />}
+              className="from-amber-50 to-amber-100 border-l-amber-500"
+              iconColor="text-amber-500"
             />
             <StatCard
               title="Approuvées par vous"
               value={stats.approved}
               description="Déclarations que vous avez approuvées"
-              icon={<CircleCheck className="h-5 w-5 text-green-500" />}
-              color="bg-green-50 shadow-sm border-t-green-500"
+              icon={<CircleCheck className="h-5 w-5" />}
+              className="from-green-50 to-green-100 border-l-green-500"
+              iconColor="text-green-500"
             />
             <StatCard
               title="Total approuvées"
               value={stats.totalApproved}
               description="Toutes les déclarations approuvées"
-              icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-              color="bg-green-50 shadow-sm border-t-green-500"
+              icon={<CheckCircle className="h-5 w-5" />}
+              className="from-emerald-50 to-emerald-100 border-l-emerald-500"
+              iconColor="text-emerald-500"
             />
             <StatCard
               title="Rejetées"
               value={stats.rejected}
               description="Déclarations que vous avez rejetées"
-              icon={<AlertTriangle className="h-5 w-5 text-red-500" />}
-              color="bg-red-50 shadow-sm border-t-red-500"
+              icon={<AlertTriangle className="h-5 w-5" />}
+              className="from-red-50 to-red-100 border-l-red-500"
+              iconColor="text-red-500"
             />
           </>
         );
@@ -226,29 +238,33 @@ export const StatisticsCards = () => {
               title="Soumises"
               value={stats.submitted}
               description="En attente de vérification"
-              icon={<FileText className="h-5 w-5 text-blue-500" />}
-              color="bg-blue-50 shadow-sm border-t-blue-500"
+              icon={<FileText className="h-5 w-5" />}
+              className="from-blue-50 to-blue-100 border-l-blue-500"
+              iconColor="text-blue-500"
             />
             <StatCard
               title="Vérifiées"
               value={stats.verified}
               description="En attente de validation"
-              icon={<FileCheck className="h-5 w-5 text-purple-500" />}
-              color="bg-purple-50 shadow-sm border-t-purple-500"
+              icon={<FileCheck className="h-5 w-5" />}
+              className="from-purple-50 to-purple-100 border-l-purple-500"
+              iconColor="text-purple-500"
             />
             <StatCard
               title="Approuvées"
               value={stats.approved}
               description="Déclarations finalisées"
-              icon={<CircleCheck className="h-5 w-5 text-green-500" />}
-              color="bg-green-50 shadow-sm border-t-green-500"
+              icon={<CircleCheck className="h-5 w-5" />}
+              className="from-green-50 to-green-100 border-l-green-500"
+              iconColor="text-green-500"
             />
             <StatCard
               title="Rejetées"
               value={stats.rejected}
               description="Déclarations rejetées"
-              icon={<AlertTriangle className="h-5 w-5 text-red-500" />}
-              color="bg-red-50 shadow-sm border-t-red-500"
+              icon={<AlertTriangle className="h-5 w-5" />}
+              className="from-red-50 to-red-100 border-l-red-500"
+              iconColor="text-red-500"
             />
           </>
         );
@@ -267,19 +283,25 @@ interface StatCardProps {
   value: number;
   description: string;
   icon: React.ReactNode;
-  color: string;
+  className?: string;
+  iconColor?: string;
 }
 
-const StatCard = ({ title, value, description, icon, color }: StatCardProps) => {
+const StatCard = ({ title, value, description, icon, className, iconColor }: StatCardProps) => {
   return (
-    <Card className={`${color} border-none shadow-sm hover:shadow-md transition-shadow border-t-4`}>
+    <Card className={cn(
+      "overflow-hidden border-l-4 hover:shadow-md transition-shadow bg-gradient-to-br", 
+      className
+    )}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        {icon}
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <div className={cn("p-2 rounded-full bg-white/80 shadow-sm", iconColor)}>
+          {icon}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold">{value}</div>
-        <CardDescription className="text-gray-600">{description}</CardDescription>
+        <CardDescription className="text-gray-700 mt-1">{description}</CardDescription>
       </CardContent>
     </Card>
   );

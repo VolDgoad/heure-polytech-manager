@@ -8,7 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useMemo } from "react";
 
 export const DeclarationChart = () => {
@@ -81,7 +81,11 @@ export const DeclarationChart = () => {
 
   // Si pas assez de données, ne pas afficher le graphique
   if (chartData.length === 0 || chartData.every(d => Object.values(d).every(v => typeof v === 'number' ? v === 0 : false))) {
-    return null;
+    return (
+      <div className="flex items-center justify-center h-60 bg-gray-50/50 rounded-md">
+        <p className="text-gray-500 text-sm">Pas assez de données pour afficher le graphique</p>
+      </div>
+    );
   }
 
   const getChartTitle = () => {
@@ -125,40 +129,78 @@ export const DeclarationChart = () => {
     },
     count: {
       label: "Nombre",
-      color: "#3b82f6" // blue-500
+      color: "#4f46e5" // indigo-600
     }
   };
 
   return (
-    <div className="mt-8 space-y-4">
-      <h2 className="text-xl font-semibold">{getChartTitle()}</h2>
-      <div className="rounded-md border p-4 bg-white">
-        <div className="h-80">
+    <div className="space-y-4">
+      <h3 className="text-base font-semibold">{getChartTitle()}</h3>
+      <div className="bg-white p-0">
+        <div className="h-64">
           <ChartContainer config={config}>
             <ResponsiveContainer width="100%" height="100%">
               {user?.role === "enseignant" ? (
                 // Graphique pour les enseignants
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="status" />
-                  <YAxis allowDecimals={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" fill={config.count.color} radius={[4, 4, 0, 0]} />
+                <BarChart data={chartData} barGap={2} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="status" 
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#6b7280' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    allowDecimals={false} 
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '6px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={{ fill: 'rgba(0, 0, 0, 0.04)' }}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill={config.count.color} 
+                    radius={[4, 4, 0, 0]} 
+                    name="Nombre"
+                  />
                 </BarChart>
               ) : (
                 // Graphique pour les administrateurs
-                <BarChart data={chartData} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="department" />
-                  <YAxis allowDecimals={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
+                <BarChart data={chartData} barGap={4} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="department" 
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#6b7280' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    allowDecimals={false}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '6px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={{ fill: 'rgba(0, 0, 0, 0.04)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} />
                   {["verifiees", "validees", "approuvees"].map((status) => (
                     <Bar 
                       key={status} 
                       dataKey={status} 
                       fill={config[status as keyof typeof config].color}
                       radius={[4, 4, 0, 0]}
+                      name={config[status as keyof typeof config].label}
                     />
                   ))}
                 </BarChart>
