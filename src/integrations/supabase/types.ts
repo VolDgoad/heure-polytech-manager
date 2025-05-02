@@ -256,6 +256,83 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          browser_notifications: boolean | null
+          created_at: string
+          declaration_notifications: boolean | null
+          email_notifications: boolean | null
+          id: string
+          system_notifications: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          browser_notifications?: boolean | null
+          created_at?: string
+          declaration_notifications?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          system_notifications?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          browser_notifications?: boolean | null
+          created_at?: string
+          declaration_notifications?: boolean | null
+          email_notifications?: boolean | null
+          id?: string
+          system_notifications?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -407,6 +484,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          notifications: Json | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notifications?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notifications?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

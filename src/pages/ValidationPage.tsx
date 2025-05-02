@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useDeclarations } from '@/context/DeclarationContext';
-import { Declaration } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -95,7 +94,7 @@ const ValidationPage = () => {
                 <DeclarationCard 
                   key={declaration.id} 
                   declaration={declaration} 
-                  actions="validate" 
+                  actions="approve"  // Changed from "validate" to "approve"
                 />
               ))}
             </div>

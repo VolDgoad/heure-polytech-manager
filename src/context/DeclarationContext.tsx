@@ -35,88 +35,13 @@ const DeclarationContext = createContext<DeclarationContextType>({
   rejectDeclaration: async () => {},
 });
 
-// Update the INITIAL_DECLARATIONS array to include a draft declaration
-const INITIAL_DECLARATIONS: Declaration[] = [
-  {
-    id: '1',
-    teacher_id: '1',
-    teacherName: 'Dr. Amadou Diop',
-    departmentName: 'Informatique',
-    department_id: 'dept1',
-    course_element_id: 'ce1',
-    cm_hours: 2,
-    td_hours: 0,
-    tp_hours: 3,
-    declaration_date: '2023-05-09',
-    status: 'soumise',
-    payment_status: 'non_paye',
-    created_at: '2023-05-09T10:30:00Z',
-    updated_at: '2023-05-09T15:45:00Z',
-    totalHours: 5
-  },
-  {
-    id: '2',
-    teacher_id: '1',
-    teacherName: 'Dr. Amadou Diop',
-    departmentName: 'Informatique',
-    department_id: 'dept1',
-    course_element_id: 'ce2',
-    cm_hours: 3,
-    td_hours: 0,
-    tp_hours: 0,
-    declaration_date: '2023-05-14',
-    status: 'verifiee',
-    payment_status: 'non_paye',
-    created_at: '2023-05-14T08:20:00Z',
-    updated_at: '2023-05-16T14:10:00Z',
-    verified_by: 'uid123',
-    verified_at: '2023-05-16T14:10:00Z',
-    totalHours: 3
-  },
-  {
-    id: '3',
-    teacher_id: '1',
-    teacherName: 'Dr. Amadou Diop',
-    departmentName: 'Informatique',
-    department_id: 'dept1',
-    course_element_id: 'ce3',
-    cm_hours: 1,
-    td_hours: 2,
-    tp_hours: 1,
-    declaration_date: '2023-05-20',
-    status: 'brouillon',
-    payment_status: 'non_paye',
-    created_at: '2023-05-20T09:00:00Z',
-    updated_at: '2023-05-20T09:00:00Z',
-    totalHours: 4
-  },
-  {
-    id: '4',
-    teacher_id: '2',
-    teacherName: 'Dr. Fatou Ndiaye',
-    departmentName: 'Mathématiques',
-    department_id: 'dept2',
-    course_element_id: 'ce4',
-    cm_hours: 4,
-    td_hours: 2,
-    tp_hours: 0,
-    declaration_date: '2023-05-21',
-    status: 'validee',
-    payment_status: 'non_paye',
-    created_at: '2023-05-21T10:20:00Z',
-    updated_at: '2023-05-22T14:30:00Z',
-    validated_by: 'uid456',
-    validated_at: '2023-05-22T14:30:00Z',
-    totalHours: 6
-  }
-];
-
 // Create the provider component
 export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const [declarations, setDeclarations] = useState<Declaration[]>(INITIAL_DECLARATIONS);
+  const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [pendingDeclarations, setPendingDeclarations] = useState<Declaration[]>([]);
   const [validatedDeclarations, setValidatedDeclarations] = useState<Declaration[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch declarations on mount or when user changes
   useEffect(() => {
@@ -124,33 +49,43 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
     
     const fetchDeclarations = async () => {
       try {
+        setLoading(true);
+        console.log('Fetching declarations from Supabase for user:', user.id, user.role);
+        
         const { data, error } = await supabase
           .from('declarations')
-          .select('*');
+          .select(`*, 
+            profiles!declarations_teacher_id_fkey(first_name, last_name),
+            departments!declarations_department_id_fkey(name)
+          `);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching declarations:', error);
+          throw error;
+        }
+        
+        console.log('Fetched declarations from Supabase:', data);
         
         // Process and set declarations
-        const processedDeclarations = data.map((declaration: any) => ({
+        const processedDeclarations: Declaration[] = data.map((declaration: any) => ({
           ...declaration,
+          teacherName: declaration.profiles ? 
+            `${declaration.profiles.first_name} ${declaration.profiles.last_name}` : 
+            'Enseignant inconnu',
+          departmentName: declaration.departments ? declaration.departments.name : 'Département inconnu',
           totalHours: (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0)
         }));
         
         setDeclarations(processedDeclarations);
+        setLoading(false);
         
       } catch (error: any) {
         console.error('Error fetching declarations:', error.message);
+        setLoading(false);
       }
     };
     
-    // For now, use mock data
-    // fetchDeclarations();
-    
-    // Filter pending declarations based on user role
-    filterDeclarations();
-    
-    console.log('DeclarationContext - User role:', user?.role);
-    console.log('DeclarationContext - Initial declarations:', INITIAL_DECLARATIONS);
+    fetchDeclarations();
     
   }, [user]);
 
@@ -178,7 +113,8 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         // Scolarité sees declarations with status "soumise"
         pendingFiltered = declarations.filter(d => d.status === 'soumise');
         validatedFiltered = declarations.filter(d => 
-          d.status === 'verifiee' || d.status === 'rejetee' && d.verified_by === user.id
+          (d.status === 'verifiee' || d.status === 'rejetee') && 
+          d.verified_by === user.id
         );
         console.log('Scolarité filtered pending:', pendingFiltered);
         console.log('Scolarité filtered validated:', validatedFiltered);
@@ -242,26 +178,41 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to create a new declaration
   const createDeclaration = async (sessions: any) => {
     try {
-      const newDeclaration: Declaration = {
-        id: Date.now().toString(),
-        teacher_id: user?.id || '',
-        teacherName: `${user?.first_name} ${user?.last_name}`,
-        departmentName: 'Informatique', // Would come from department lookup
-        department_id: user?.department_id || 'dept1',
-        course_element_id: 'ce' + Date.now(),
-        cm_hours: 2,
-        td_hours: 1,
-        tp_hours: 0,
-        declaration_date: new Date().toISOString().split('T')[0],
-        status: 'brouillon',
-        payment_status: 'non_paye',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        totalHours: 3
+      if (!user) {
+        toast.error('Vous devez être connecté pour créer une déclaration');
+        return;
+      }
+      
+      const newDeclaration = {
+        teacher_id: user.id,
+        department_id: user.department_id || '', // Make sure to handle the case where department_id is null
+        course_element_id: sessions.course_element_id || '',
+        cm_hours: sessions.cm_hours || 0,
+        td_hours: sessions.td_hours || 0,
+        tp_hours: sessions.tp_hours || 0,
+        status: 'brouillon' as DeclarationStatus,
+        payment_status: 'non_paye'
       };
       
-      setDeclarations([...declarations, newDeclaration]);
-      toast.success('Déclaration créée avec succès');
+      const { data, error } = await supabase
+        .from('declarations')
+        .insert([newDeclaration])
+        .select();
+        
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        // Add computed fields
+        const createdDeclaration: Declaration = {
+          ...data[0],
+          teacherName: `${user.first_name} ${user.last_name}`,
+          departmentName: '', // Would come from a lookup
+          totalHours: (data[0].cm_hours || 0) + (data[0].td_hours || 0) + (data[0].tp_hours || 0)
+        };
+        
+        setDeclarations([...declarations, createdDeclaration]);
+        toast.success('Déclaration créée avec succès');
+      }
       
     } catch (error: any) {
       console.error('Error creating declaration:', error);
@@ -272,9 +223,24 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to update a declaration
   const updateDeclaration = async (id: string, sessions: any) => {
     try {
+      const { error } = await supabase
+        .from('declarations')
+        .update({
+          ...sessions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
-          return { ...d, ...sessions, updated_at: new Date().toISOString() };
+          const updatedDeclaration = { ...d, ...sessions, updated_at: new Date().toISOString() };
+          updatedDeclaration.totalHours = (updatedDeclaration.cm_hours || 0) + 
+                                          (updatedDeclaration.td_hours || 0) + 
+                                          (updatedDeclaration.tp_hours || 0);
+          return updatedDeclaration;
         }
         return d;
       });
@@ -293,6 +259,17 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Submitting declaration with ID:", id);
       
+      const { error } = await supabase
+        .from('declarations')
+        .update({
+          status: 'soumise' as DeclarationStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
           return { 
@@ -307,9 +284,6 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
       setDeclarations(updatedDeclarations);
       toast.success('Déclaration soumise avec succès');
       
-      console.log("Declaration status updated to 'soumise'");
-      console.log("Updated declarations:", updatedDeclarations);
-      
     } catch (error: any) {
       console.error('Error submitting declaration:', error);
       toast.error(`Erreur lors de la soumission: ${error.message}`);
@@ -319,26 +293,32 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to verify a declaration
   const verifyDeclaration = async (id: string, isVerified: boolean, rejectionReason?: string) => {
     try {
+      if (!user) return;
+      
+      const updateData = isVerified ? {
+        status: 'verifiee' as DeclarationStatus,
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : {
+        status: 'rejetee' as DeclarationStatus,
+        rejected_by: user.id,
+        rejected_at: new Date().toISOString(),
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('declarations')
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
-          if (isVerified) {
-            return { 
-              ...d, 
-              status: 'verifiee' as DeclarationStatus,
-              verified_by: user?.id,
-              verified_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-          } else {
-            return { 
-              ...d, 
-              status: 'rejetee' as DeclarationStatus,
-              rejected_by: user?.id,
-              rejected_at: new Date().toISOString(),
-              rejection_reason: rejectionReason,
-              updated_at: new Date().toISOString()
-            };
-          }
+          return { ...d, ...updateData };
         }
         return d;
       });
@@ -360,26 +340,32 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to validate a declaration
   const validateDeclaration = async (id: string, isValidated: boolean, rejectionReason?: string) => {
     try {
+      if (!user) return;
+      
+      const updateData = isValidated ? {
+        status: 'validee' as DeclarationStatus,
+        validated_by: user.id,
+        validated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : {
+        status: 'rejetee' as DeclarationStatus,
+        rejected_by: user.id,
+        rejected_at: new Date().toISOString(),
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('declarations')
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
-          if (isValidated) {
-            return { 
-              ...d, 
-              status: 'validee' as DeclarationStatus,
-              validated_by: user?.id,
-              validated_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-          } else {
-            return { 
-              ...d, 
-              status: 'rejetee' as DeclarationStatus,
-              rejected_by: user?.id,
-              rejected_at: new Date().toISOString(),
-              rejection_reason: rejectionReason,
-              updated_at: new Date().toISOString()
-            };
-          }
+          return { ...d, ...updateData };
         }
         return d;
       });
@@ -401,26 +387,32 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to approve a declaration
   const approveDeclaration = async (id: string, isApproved: boolean, rejectionReason?: string) => {
     try {
+      if (!user) return;
+      
+      const updateData = isApproved ? {
+        status: 'approuvee' as DeclarationStatus,
+        approved_by: user.id,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : {
+        status: 'rejetee' as DeclarationStatus,
+        rejected_by: user.id,
+        rejected_at: new Date().toISOString(),
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('declarations')
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
-          if (isApproved) {
-            return { 
-              ...d, 
-              status: 'approuvee' as DeclarationStatus,
-              approved_by: user?.id,
-              approved_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-          } else {
-            return { 
-              ...d, 
-              status: 'rejetee' as DeclarationStatus,
-              rejected_by: user?.id,
-              rejected_at: new Date().toISOString(),
-              rejection_reason: rejectionReason,
-              updated_at: new Date().toISOString()
-            };
-          }
+          return { ...d, ...updateData };
         }
         return d;
       });
@@ -442,12 +434,28 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
   // Function to reject a declaration
   const rejectDeclaration = async (id: string, rejectionReason: string) => {
     try {
+      if (!user) return;
+      
+      const { error } = await supabase
+        .from('declarations')
+        .update({
+          status: 'rejetee' as DeclarationStatus,
+          rejected_by: user.id,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: rejectionReason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedDeclarations = declarations.map(d => {
         if (d.id === id) {
           return { 
             ...d, 
             status: 'rejetee' as DeclarationStatus,
-            rejected_by: user?.id,
+            rejected_by: user.id,
             rejected_at: new Date().toISOString(),
             rejection_reason: rejectionReason,
             updated_at: new Date().toISOString()

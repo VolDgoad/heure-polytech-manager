@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import DeclarationCard from '@/components/DeclarationCard';
+import { supabase } from '@/integrations/supabase/client';
 
 const ApprobationPage = () => {
   const { user } = useAuth();
@@ -28,7 +29,23 @@ const ApprobationPage = () => {
       return;
     }
     
-    setLoading(false);
+    const fetchDeclarations = async () => {
+      try {
+        // Log that we're attempting to fetch declarations
+        console.log("ApprobationPage - Attempting to fetch declarations from Supabase");
+        
+        // You would fetch declarations from Supabase here
+        // For now, we'll just use the context data and set loading to false
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching declarations:", error);
+        setLoading(false);
+      }
+    };
+    
+    fetchDeclarations();
+    
+    console.log("ApprobationPage - User role:", user.role);
     console.log("ApprobationPage - Directrice études - pending declarations:", pendingDeclarations);
     console.log("ApprobationPage - Directrice études - validated declarations:", validatedDeclarations);
     

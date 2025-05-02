@@ -6,8 +6,6 @@ import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { FileText, CheckSquare } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
 
 interface DeclarationCardProps {
   declaration: Declaration;
@@ -16,40 +14,6 @@ interface DeclarationCardProps {
 
 const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps) => {
   const navigate = useNavigate();
-  const [departmentName, setDepartmentName] = useState<string>('');
-  const [teacherName, setTeacherName] = useState<string>('');
-
-  useEffect(() => {
-    const fetchRelatedData = async () => {
-      // Fetch department name
-      if (declaration.department_id) {
-        const { data: departmentData } = await supabase
-          .from('departments')
-          .select('name')
-          .eq('id', declaration.department_id)
-          .single();
-        
-        if (departmentData) {
-          setDepartmentName(departmentData.name);
-        }
-      }
-
-      // Fetch teacher name
-      if (declaration.teacher_id) {
-        const { data: teacherData } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', declaration.teacher_id)
-          .single();
-        
-        if (teacherData) {
-          setTeacherName(`${teacherData.first_name} ${teacherData.last_name}`);
-        }
-      }
-    };
-
-    fetchRelatedData();
-  }, [declaration]);
 
   // Calculate total hours
   const totalHours = (declaration.cm_hours || 0) + (declaration.td_hours || 0) + (declaration.tp_hours || 0);
@@ -67,14 +31,19 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
   };
 
   const handleApprove = () => {
-    navigate(`/validation/${declaration.id}`);
+    if (actions === 'verify') {
+      navigate(`/verification/${declaration.id}`);
+    } else {
+      // For chef de département, redirect to validation details
+      navigate(`/validation/${declaration.id}`);
+    }
   };
 
   return (
     <Card className="border-gray-200 hover:shadow-md transition-shadow duration-200">
       <CardHeader className="flex flex-row items-center justify-between py-4 bg-gray-50">
         <CardTitle className="text-md font-medium">
-          {departmentName || 'Département'}
+          {declaration.departmentName || 'Département'}
         </CardTitle>
         <DeclarationStatusBadge status={declaration.status} />
       </CardHeader>
@@ -82,7 +51,7 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-gray-500">Enseignant</p>
-            <p className="font-medium">{teacherName || 'Non spécifié'}</p>
+            <p className="font-medium">{declaration.teacherName || 'Non spécifié'}</p>
           </div>
           <div>
             <p className="text-gray-500">Total Heures</p>
@@ -99,7 +68,7 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
           <div className="col-span-2">
             <p className="text-gray-500">Heures par type</p>
             <p className="font-medium">
-              CM: {declaration.cm_hours} | TD: {declaration.td_hours} | TP: {declaration.tp_hours}
+              CM: {declaration.cm_hours || 0} | TD: {declaration.td_hours || 0} | TP: {declaration.tp_hours || 0}
             </p>
           </div>
         </div>
@@ -140,7 +109,7 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
             </Button>
             <Button variant="default" size="sm" onClick={handleApprove}>
               <CheckSquare className="mr-1 h-4 w-4" />
-              Valider
+              {actions === 'verify' ? 'Vérifier' : actions === 'approve' ? 'Valider' : 'Voir'}
             </Button>
           </>
         )}
