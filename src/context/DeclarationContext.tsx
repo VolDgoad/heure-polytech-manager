@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { Declaration, DeclarationStatus } from '@/types';
+import { Declaration, DeclarationStatus, PaymentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -191,12 +191,12 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
         td_hours: sessions.td_hours || 0,
         tp_hours: sessions.tp_hours || 0,
         status: 'brouillon' as DeclarationStatus,
-        payment_status: 'non_paye'
+        payment_status: 'non_paye' as PaymentStatus
       };
       
       const { data, error } = await supabase
         .from('declarations')
-        .insert([newDeclaration])
+        .insert(newDeclaration)
         .select();
         
       if (error) throw error;

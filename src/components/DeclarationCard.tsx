@@ -33,6 +33,9 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
   const handleApprove = () => {
     if (actions === 'verify') {
       navigate(`/verification/${declaration.id}`);
+    } else if (actions === 'approve') {
+      // For directrice des études, redirect to approbation details
+      navigate(`/approbation/${declaration.id}`);
     } else {
       // For chef de département, redirect to validation details
       navigate(`/validation/${declaration.id}`);
@@ -109,7 +112,7 @@ const DeclarationCard = ({ declaration, actions = 'view' }: DeclarationCardProps
             </Button>
             <Button variant="default" size="sm" onClick={handleApprove}>
               <CheckSquare className="mr-1 h-4 w-4" />
-              {actions === 'verify' ? 'Vérifier' : actions === 'approve' ? 'Valider' : 'Voir'}
+              Valider
             </Button>
           </>
         )}
