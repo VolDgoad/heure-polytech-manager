@@ -115,8 +115,8 @@ const ChatbotPanel = ({ isOpen, onClose }: ChatbotPanelProps) => {
   return (
     <div className="fixed bottom-4 right-4 w-full sm:w-96 z-50">
       <Card className="shadow-lg border-gray-200">
-        <CardHeader className="bg-blue-50 border-b border-gray-200 p-4 flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-blue-800">Assistant Polytech</CardTitle>
+        <CardHeader className="bg-indigo-50 border-b border-gray-200 p-4 flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold text-indigo-800">Assistant Polytech</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
             <X className="h-4 w-4" />
           </Button>
@@ -130,7 +130,7 @@ const ChatbotPanel = ({ isOpen, onClose }: ChatbotPanelProps) => {
                 className={`flex items-start mb-4 ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!message.isUser && (
-                  <Avatar className="h-8 w-8 mr-2 bg-blue-100 text-blue-800">
+                  <Avatar className="h-8 w-8 mr-2 bg-indigo-100 text-indigo-800">
                     <span>AI</span>
                   </Avatar>
                 )}
@@ -138,7 +138,7 @@ const ChatbotPanel = ({ isOpen, onClose }: ChatbotPanelProps) => {
                 <div 
                   className={`px-4 py-2 rounded-lg max-w-[75%] ${
                     message.isUser 
-                      ? 'bg-blue-600 text-white' 
+                      ? 'bg-indigo-600 text-white' 
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
@@ -175,7 +175,7 @@ const ChatbotPanel = ({ isOpen, onClose }: ChatbotPanelProps) => {
               onClick={handleSendMessage} 
               disabled={!inputMessage.trim() || isLoading}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
