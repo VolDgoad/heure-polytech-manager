@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
@@ -8,22 +9,12 @@ import { ChatbotProvider } from './context/ChatbotContext';
 import { DeclarationProvider } from './context/DeclarationContext';
 import { Toaster } from '@/components/ui/sonner';
 import { NotificationProvider } from './context/NotificationContext';
-import ChatbotButton from './components/chatbot/ChatbotButton';
-import ChatbotPanel from './components/chatbot/ChatbotPanel';
 import LoginPage from './pages/LoginPage';
 import Index from './pages/Index';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const queryClient = new QueryClient();
-
-  const openChatbot = () => {
-    setIsChatbotOpen(true);
-  };
-
-  const closeChatbot = () => {
-    setIsChatbotOpen(false);
-  };
 
   return (
     <Router>
@@ -37,17 +28,22 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/dashboard" element={
+                      <AppShell>
+                        <DashboardPage />
+                      </AppShell>
+                    } />
                     <Route
                       path="*"
                       element={
                         <AppShell>
-                          {/* Child routes will be rendered inside AppShell via Outlet */}
+                          <div className="flex items-center justify-center h-full">
+                            <p>Page not found</p>
+                          </div>
                         </AppShell>
                       }
                     />
                   </Routes>
-                  <ChatbotButton onClick={openChatbot} />
-                  <ChatbotPanel isOpen={isChatbotOpen} onClose={closeChatbot} />
                 </DeclarationProvider>
               </ChatbotProvider>
             </NotificationProvider>

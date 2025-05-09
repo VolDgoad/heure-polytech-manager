@@ -7,7 +7,11 @@ import { Outlet } from 'react-router-dom';
 import ChatbotButton from '../chatbot/ChatbotButton';
 import ChatbotPanel from '../chatbot/ChatbotPanel';
 
-const AppShell = ({ children }) => {
+interface AppShellProps {
+  children?: React.ReactNode;
+}
+
+const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const { user } = useAuth();
   const { isChatbotOpen, openChatbot, closeChatbot } = useChatbot();
 
