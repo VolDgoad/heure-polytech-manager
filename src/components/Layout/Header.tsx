@@ -1,5 +1,8 @@
 
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -7,111 +10,119 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Bell, LogOut, Menu, User2 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
+} from '@/components/ui/dropdown-menu';
+import { LogOut, User, Settings, Moon, Sun } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from 'next-themes';
+import NotificationCenter from '../notifications/NotificationCenter';
 
-export function Header() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const isMobile = useIsMobile();
+const Header = () => {
+  const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const location = useLocation();
 
-  const toggleMobileMenu = () => {
-    setShowMobileMenu(!showMobileMenu);
+  const initials = user ? 
+    `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() :
+    'ME';
+    
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const handleProfileClick = () => {
-    navigate("/profile");
-  };
-
-  function getInitials(firstName: string, lastName: string) {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  // Don't show the header on login or register pages
+  if (location.pathname === '/login' || location.pathname === '/register') {
+    return null;
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMobileMenu}
-                className="lg:hidden mr-2"
-              >
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            )}
-            <div className="text-xl font-semibold text-polytech-primary">
-              Polytech Diamniadio
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
+    <header className="border-b z-10 fixed top-0 left-0 right-0 bg-background h-16">
+      <div className="flex items-center justify-between h-full px-4">
+        <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center">
+            <img 
+              src="/logo.png" 
+              alt="UAM Logo" 
+              className="h-10 w-auto" 
+            />
+            <span className="font-bold text-xl ml-2 hidden md:block">UAM</span>
+          </Link>
+        </div>
+
+        {user ? (
+          <div className="flex items-center gap-2">
+            <NotificationCenter className="mr-2" />
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="mr-2"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-[1.2rem] w-[1.2rem]" />
+              ) : (
+                <Moon className="h-[1.2rem] w-[1.2rem]" />
+              )}
             </Button>
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
-                  >
-                    <Avatar className="h-8 w-8">
-                      {user.photo_url ? (
-                        <img
-                          src={user.photo_url}
-                          alt={`${user.first_name} ${user.last_name}`}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {getInitials(user.first_name, user.last_name)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user.first_name} {user.last_name}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleProfileClick}>
-                    <User2 className="mr-2 h-4 w-4" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar>
+                    <AvatarImage 
+                      src={user.photo_url || ''} 
+                      alt={`${user.first_name} ${user.last_name}`} 
+                    />
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  <div>
+                    <p>{`${user.first_name} ${user.last_name}`}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link to="/profile">
+                  <DropdownMenuItem>
+                    <User className="w-4 h-4 mr-2" />
                     <span>Profil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Déconnexion</span>
+                </Link>
+                <Link to="/settings">
+                  <DropdownMenuItem>
+                    <Settings className="w-4 h-4 mr-2" />
+                    <span>Paramètres</span>
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>Déconnexion</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link to="/login">
+              <Button variant="secondary">Se connecter</Button>
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );
-}
+};
+
+export default Header;

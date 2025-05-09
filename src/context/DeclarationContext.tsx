@@ -4,6 +4,7 @@ import { Declaration, DeclarationStatus, PaymentStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { NotificationService } from '@/services/NotificationService';
+import { InAppNotificationService } from '@/services/InAppNotificationService';
 
 // Define the context type
 interface DeclarationContextType {
@@ -284,9 +285,34 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
       // Get the updated declaration
       const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
       
-      // Send notification
+      // Send email notification
       if (updatedDeclaration && user) {
         await NotificationService.notifyStatusChange(updatedDeclaration, user, 'soumise');
+        
+        // Send in-app notification to scolarité users
+        const { data: scolariteUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'scolarite');
+          
+        if (scolariteUsers && scolariteUsers.length > 0) {
+          for (const scolariteUser of scolariteUsers) {
+            await InAppNotificationService.createNotification(
+              scolariteUser.id,
+              'Nouvelle déclaration à vérifier',
+              `Une déclaration de ${updatedDeclaration.teacherName || 'un enseignant'} a été soumise et requiert votre vérification.`,
+              'info',
+              { declarationId: id }
+            );
+          }
+        }
+        
+        // Send in-app notification to the teacher
+        await InAppNotificationService.notifyDeclarationStatusChange(
+          id,
+          updatedDeclaration.teacher_id, 
+          'soumise'
+        );
       }
       
       setDeclarations(updatedDeclarations);
@@ -334,13 +360,42 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
       // Get the updated declaration
       const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
       
-      // Send notification
+      // Send notifications
       if (updatedDeclaration && user) {
+        // Send email notification
         await NotificationService.notifyStatusChange(
           updatedDeclaration, 
           user, 
           isVerified ? 'verifiee' : 'rejetee'
         );
+        
+        // Send in-app notification to the teacher
+        await InAppNotificationService.notifyDeclarationStatusChange(
+          id,
+          updatedDeclaration.teacher_id,
+          isVerified ? 'verifiee' : 'rejetee'
+        );
+        
+        if (isVerified) {
+          // Send in-app notification to chef de département
+          const { data: chefUsers } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'chef_departement')
+            .eq('department_id', updatedDeclaration.department_id);
+            
+          if (chefUsers && chefUsers.length > 0) {
+            for (const chefUser of chefUsers) {
+              await InAppNotificationService.createNotification(
+                chefUser.id,
+                'Déclaration vérifiée à valider',
+                `Une déclaration de ${updatedDeclaration.teacherName || 'un enseignant'} a été vérifiée et requiert votre validation.`,
+                'info',
+                { declarationId: id }
+              );
+            }
+          }
+        }
       }
       
       setDeclarations(updatedDeclarations);
@@ -393,13 +448,41 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
       // Get the updated declaration
       const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
       
-      // Send notification
+      // Send notifications
       if (updatedDeclaration && user) {
+        // Send email notification
         await NotificationService.notifyStatusChange(
           updatedDeclaration, 
           user, 
           isValidated ? 'validee' : 'rejetee'
         );
+        
+        // Send in-app notification to the teacher
+        await InAppNotificationService.notifyDeclarationStatusChange(
+          id,
+          updatedDeclaration.teacher_id,
+          isValidated ? 'validee' : 'rejetee'
+        );
+        
+        if (isValidated) {
+          // Send in-app notification to directrice des études
+          const { data: directriceUsers } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'directrice_etudes');
+            
+          if (directriceUsers && directriceUsers.length > 0) {
+            for (const directriceUser of directriceUsers) {
+              await InAppNotificationService.createNotification(
+                directriceUser.id,
+                'Déclaration validée à approuver',
+                `Une déclaration de ${updatedDeclaration.teacherName || 'un enseignant'} a été validée par le chef de département et nécessite votre approbation finale.`,
+                'info',
+                { declarationId: id }
+              );
+            }
+          }
+        }
       }
       
       setDeclarations(updatedDeclarations);
@@ -452,11 +535,19 @@ export const DeclarationProvider = ({ children }: { children: ReactNode }) => {
       // Get the updated declaration
       const updatedDeclaration = updatedDeclarations.find(d => d.id === id);
       
-      // Send notification
+      // Send notifications
       if (updatedDeclaration && user) {
+        // Send email notification
         await NotificationService.notifyStatusChange(
           updatedDeclaration, 
           user, 
+          isApproved ? 'approuvee' : 'rejetee'
+        );
+        
+        // Send in-app notification to the teacher
+        await InAppNotificationService.notifyDeclarationStatusChange(
+          id,
+          updatedDeclaration.teacher_id,
           isApproved ? 'approuvee' : 'rejetee'
         );
       }
