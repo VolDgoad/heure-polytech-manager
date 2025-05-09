@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 
 export class InAppNotificationService {
   /**
@@ -43,7 +43,7 @@ export class InAppNotificationService {
    * Create notifications for all users with a specific role
    */
   static async notifyUsersByRole(
-    role: string,
+    role: UserRole,
     title: string,
     message: string,
     type: string = 'info',

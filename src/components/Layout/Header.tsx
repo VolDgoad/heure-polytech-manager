@@ -17,7 +17,7 @@ import { useTheme } from 'next-themes';
 import NotificationCenter from '../notifications/NotificationCenter';
 
 const Header = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
 
@@ -27,7 +27,7 @@ const Header = () => {
     
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
     } catch (error) {
       console.error('Error signing out:', error);
     }
